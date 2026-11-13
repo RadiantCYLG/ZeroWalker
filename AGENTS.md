@@ -18,6 +18,7 @@
 | --- | --- |
 | `AGENTS.md` / `CLAUDE.md` | 本说明书。CLAUDE.md 只有一行 `@AGENTS.md`，勿改 |
 | `Documents/` | 设计真相：概念、玩法专题、截图。代码怎么实现不算真相，这里写「是什么、为什么」 |
+| `Documents/AI开发游戏规范.md` | **团队开发规范原文**（要求）。会随进展更新；本项目的落地做法写在本文「拍板记录」，冲突时以规范为准并在此记录差异 |
 | `Assets/Scripts/Core/` | 纯 C# 逻辑层：数值 DTO（`Model/`）+ 规则（`Rules/`）。**不引用 UnityEngine** |
 | `Assets/Scripts/Framework/` | 自控底座：内容加载、存档、LitJson。可引用引擎 |
 | `Assets/Scripts/Game/` | 对象/控制层：MonoBehaviour、状态机、表现。`Player/`、`Combat/`、`Camera/`、`VFX/` |
