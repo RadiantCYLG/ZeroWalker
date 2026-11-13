@@ -18,6 +18,7 @@ namespace ZeroWalker.VFX
         private float _startScale = 0.9f;
         private float _endScale = 1.35f;
         private float _elapsed;
+        private bool _hasExplicitProfile;
         private Color _baseColor;
         private Color _playColor;
 
@@ -36,7 +37,13 @@ namespace ZeroWalker.VFX
             _baseColor = target.color;
             _playColor = _baseColor;
 
-            UseProfile(ContentLoader.Current.effects.muzzleFlash);
+            // 默认用枪口火光档；若挂在同一物件上的组件（如 HitEffect）已经显式换档，就不再覆盖。
+            // SpriteFlash.Awake 与 HitEffect.Awake 的先后顺序不确定，靠这个标记保证两边都对。
+            if (!_hasExplicitProfile)
+            {
+                UseProfile(ContentLoader.Current.effects.muzzleFlash);
+            }
+
             Hide();
         }
 
@@ -45,6 +52,7 @@ namespace ZeroWalker.VFX
         {
             if (profile == null) return;
 
+            _hasExplicitProfile = true;
             _duration = profile.duration;
             _startScale = profile.startScale;
             _endScale = profile.endScale;
