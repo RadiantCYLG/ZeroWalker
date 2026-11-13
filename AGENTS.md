@@ -28,7 +28,7 @@
 | `Assets/Scripts/Framework/` | 自控底座：内容加载、存档、LitJson。可引用引擎 |
 | `Assets/Scripts/Game/` | 对象/控制层：MonoBehaviour、状态机、表现。`Player/`、`Combat/`、`Camera/`、`VFX/` |
 | `Assets/Scripts/*/ZeroWalker.*.asmdef` | 程序集边界。跨层引用必须显式声明 |
-| `Assets/Resources/Content/data/*.json` | **所有可调数值**。改手感只改这里 |
+| `Assets/Resources/Content/data/*.json` | **所有可调数值**。改手感只改这里。其中 `assets.json` 是资源 key 登记表（动画名、枪口骨骼名、将来的音效/特效 key） |
 | `Assets/Resources/Content/i18n/ui.csv` | **所有玩家可见文案**。中英两列 |
 | `Assets/Spine/` | Spine 运行时（第三方，含 `spine-unity` 程序集）。不改 |
 | `Assets/ArtRes/` | 美术源文件（角色、环境、特效），由 Unity 导入，不手工导出 |
@@ -59,11 +59,13 @@ Game/*（MonoBehaviour：读数值 → 跑规则 → 驱动动画/刚体/特效�
 1. **逻辑不碰画面**：`Core/` 下出现 `UnityEngine` 即违规（脚本会查）。动画名、颜色、缩放属于表现，留在 `Game/`。
 2. **数值只进 JSON**：新增可调数值，写进 `Content/data/*.json` 并在对应 `*Tuning` 加字段；**不要在 MonoBehaviour 上新增 `[SerializeField] float/int`**。组件上只允许挂资源引用（预制体、Sprite、Transform）与 `bool` 开关。纯数学保护量（除零下限、归一化阈值、物理 epsilon）留在代码里并写注释，不算可调数值。
 3. **文案只进表格**：玩家能看到的字进 `Content/i18n/ui.csv`，中英两列。代码里不写字面量文案。
-4. **新增 .cs 不用手工登记**：asmdef 自动收录当前目录及子目录。但新建目录要确认它归哪个程序集；跨层引用要改 asmdef 的 `references`。
+4. **新增 .cs 不用手工登记**：asmdef 自动收录当前目录及子目录。但新建目录要确认它归哪个程序集；跨层引用要改 asmdef 的 `references`。将来真需要维护清单（场景表、资源表之类），写 `tools/` 脚本生成，不手改。
 5. **一个文件一件事**：类只承担一个职责，混了两件事就拆（例：`PlayerInputReader` 轮询、`InputBindings` 解析绑定）。
 6. **编辑器/调试代码不进发行版**：调试覆盖入口用 `#if UNITY_EDITOR || DEVELOPMENT_BUILD` 包住，发行版里是空操作。
 7. **第三方目录不动**：`Assets/Spine/` 是导入的运行时，改了就再也无法升级。
 8. **场景文件只放「引用与摆放」**：数值不放场景里，否则同一份数据有了两个来源。
+9. **资源 key 只登记一处**：音效、特效、动画名、骨骼名等「用名字找资源」的 key 写在 `Content/data/assets.json`；代码里不裸写资源 key，资源读取只走 `Framework/Content/ContentLoader`（脚本会查）。
+10. **调试面板写回源目录**：面板改的数值写回 `Assets/Resources/Content/data/*.json`，不写 `persistentDataPath` 或打包产物里的副本。存档数据是另一回事，走 `JsonManager`。
 
 ## 验证命令
 
@@ -75,11 +77,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\verify-conventions
 ```
 
 - `verify-content.ps1`：**跑什么**——解析 `Content/data/*.json`，检查字段齐全、无多余字段、数值在合理区间，并核对 `ui.csv` 表头。**什么算过**——每条都是 `PASS`，退出码 0。
-- `verify-conventions.ps1`：**跑什么**——扫描 `Assets/Scripts`，检查 Core 层没有引用引擎、Game 层没有把数值写回组件字段、全部 `.cs` 是合法 UTF-8。**什么算过**——没有 `FAIL` 行，退出码 0。
+- `verify-conventions.ps1`：**跑什么**——扫描 `Assets/Scripts`，检查 Core 层没有引用引擎、Game 层没有把数值写回组件字段、资源读取只出现在 `Framework/Content`、全部 `.cs` 是合法 UTF-8。**什么算过**——没有 `FAIL` 行，退出码 0。
 
 > 新增 `.ps1` 必须存成 **UTF-8 with BOM**：Windows PowerShell 5.1 读无 BOM 的 UTF-8 会按 GBK 解码，脚本里的中文直接语法报错。
 > `tools/serialized-number-allowlist.txt` 是 `verify-conventions.ps1` 的例外名单（每行 `路径|理由`），只放「不是手感数值」的项（目前只有调试输入覆盖）。
-> 校验脚本本身也要反着验：故意把某个数值改到区间外、或往组件里塞一个 `[SerializeField] float`，脚本必须报 `FAIL`。
+> 校验脚本本身也要反着验：把数值改到区间外、往组件里塞 `[SerializeField] float`、或在 `Game/` 里写一句 `Resources.Load`，脚本都必须报 `FAIL`（2026-11-14 三种都验过）。
 
 Unity 侧（脚本跑不了的）：
 
