@@ -39,12 +39,9 @@ namespace ZeroWalker.Core.Model
         public float defaultMix = 0.08f;
     }
 
-    /// <summary>枪口位置参数。对应 Content/data/muzzle.json。</summary>
+    /// <summary>枪口位置参数。对应 Content/data/muzzle.json（骨骼名在 assets.json）。</summary>
     public sealed class MuzzleTuning
     {
-        /// <summary>Spine 骨骼名；找不到时退回 fallbackOffset。</summary>
-        public string boneName = "F_Muzzle";
-
         /// <summary>找不到骨骼时相对角色的局部偏移。</summary>
         public Vec3 fallbackOffset = new Vec3(0.85f, 1.05f, 0f);
     }

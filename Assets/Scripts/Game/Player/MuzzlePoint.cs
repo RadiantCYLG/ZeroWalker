@@ -9,7 +9,8 @@ namespace ZeroWalker.Player
     /// <summary>
     /// 枪口定位点。
     /// 直接读取 Spine 骨骼（默认 "F_Muzzle"）的世界坐标，保证子弹总是从枪口射出，
-    /// 无论角色处于哪个动作、朝向哪边。骨骼名与兜底偏移来自 Content/data/muzzle.json。
+    /// 无论角色处于哪个动作、朝向哪边。骨骼名来自 Content/data/assets.json，
+    /// 兜底偏移来自 Content/data/muzzle.json。
     /// </summary>
     [DisallowMultipleComponent]
     public class MuzzlePoint : MonoBehaviour
@@ -28,6 +29,12 @@ namespace ZeroWalker.Player
             get { return ContentLoader.Current.muzzle; }
         }
 
+        /// <summary>枪口骨骼名（来自 Content/data/assets.json）。</summary>
+        private static string MuzzleBoneName
+        {
+            get { return ContentLoader.Current.assets.spine.muzzleBone; }
+        }
+
         /// <summary>枪口的世界坐标。</summary>
         public Vector3 WorldPosition
         {
@@ -36,7 +43,7 @@ namespace ZeroWalker.Player
                 if (skeletonAnimation == null) return transform.position;
 
                 if (_bone == null && skeletonAnimation.Skeleton != null)
-                    _bone = skeletonAnimation.Skeleton.FindBone(Tuning.boneName);
+                    _bone = skeletonAnimation.Skeleton.FindBone(MuzzleBoneName);
 
                 if (_bone != null)
                     return skeletonAnimation.transform.TransformPoint(new Vector3(_bone.WorldX, _bone.WorldY, 0f));

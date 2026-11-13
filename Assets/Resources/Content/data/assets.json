@@ -1,0 +1,17 @@
+{
+  "spine": {
+    "muzzleBone": "F_Muzzle",
+    "animations": {
+      "idle": "Idle",
+      "move": "Move",
+      "attackBegin": "Attack_Begin",
+      "attackLoop": "Attack_Loop",
+      "attackEnd": "Attack_End",
+      "attackEvent": "OnAttack",
+      "die": "Die",
+      "start": "Start",
+      "skill01": "Skill_01",
+      "skill02": "Skill_02"
+    }
+  }
+}

@@ -89,8 +89,26 @@ if ($violations -eq 0) {
     Pass ("Game 层无数值 SerializeField（" + $gameFiles.Count + " 个文件，允许名单 " + $allow.Count + " 条）")
 }
 
-# ---- 3. 所有 .cs 必须是合法 UTF-8（GBK 文件会解码出替换字符）----
 $allCs = @(Get-ChildItem -LiteralPath $scriptsDir -Recurse -Filter '*.cs' -File)
+
+# ---- 3. 资源 key 只登记在一处，读取集中在 Framework/Content ----
+$contentDir = 'Assets/Scripts/Framework/Content'
+$loadPattern = 'Resources\.Load(All|Async)?\s*[<(]'
+$keyViolations = 0
+foreach ($file in $allCs) {
+    $rel = Relative $file.FullName
+    if ($rel.StartsWith($contentDir + '/')) { continue }
+    $hits = Select-String -LiteralPath $file.FullName -Pattern $loadPattern
+    foreach ($hit in $hits) {
+        $keyViolations++
+        Fail ($rel + ":" + $hit.LineNumber + " 自己按路径读资源；key 请登记进 Content/data/assets.json，读取走 ContentLoader：" + $hit.Line.Trim())
+    }
+}
+if ($keyViolations -eq 0) {
+    Pass ("资源读取只出现在 Framework/Content（扫描 " + $allCs.Count + " 个文件）")
+}
+
+# ---- 4. 所有 .cs 必须是合法 UTF-8（GBK 文件会解码出替换字符）----
 $badEncoding = 0
 foreach ($file in $allCs) {
     $text = [System.IO.File]::ReadAllText($file.FullName, [System.Text.Encoding]::UTF8)

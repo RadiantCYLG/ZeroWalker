@@ -45,6 +45,7 @@ namespace ZeroWalker.Framework.Content
             content.effects = Read("effects", content.effects);
             content.animation = Read("animation", content.animation);
             content.muzzle = Read("muzzle", content.muzzle);
+            content.assets = Read("assets", content.assets);
 
             var problems = content.Validate();
             for (var i = 0; i < problems.Count; i++)

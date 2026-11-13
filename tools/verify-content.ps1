@@ -84,7 +84,8 @@ $schema = @{
     'camera.json'    = @('offset', 'smoothTime', 'lockY')
     'effects.json'   = @('muzzleFlash', 'hitFlash', 'hitEffectTint', 'hitEffectDestroyDelay')
     'animation.json' = @('defaultMix')
-    'muzzle.json'    = @('boneName', 'fallbackOffset')
+    'muzzle.json'    = @('fallbackOffset')
+    'assets.json'    = @('spine')
 }
 
 Write-Host ("内容目录：" + $dataDir)
@@ -198,7 +199,6 @@ if ($content.ContainsKey('animation.json')) {
 
 if ($content.ContainsKey('muzzle.json')) {
     $m = $content['muzzle.json']
-    Check-Text 'muzzle.boneName' $m.boneName
     if ($null -ne $m.fallbackOffset) {
         Check-Range 'muzzle.fallbackOffset.x' $m.fallbackOffset.x -10 10
         Check-Range 'muzzle.fallbackOffset.y' $m.fallbackOffset.y -10 10
@@ -206,6 +206,49 @@ if ($content.ContainsKey('muzzle.json')) {
     }
     else {
         Fail 'muzzle.fallbackOffset 缺失'
+    }
+}
+
+# ---- 资源 key 登记表：动画名/骨骼名必须齐全且非空 ----
+if ($content.ContainsKey('assets.json')) {
+    $assetTuning = $content['assets.json']
+    if ($null -eq $assetTuning.spine) {
+        Fail 'assets.spine 缺失'
+    }
+    else {
+        Check-Text 'assets.spine.muzzleBone' $assetTuning.spine.muzzleBone
+
+        $animations = $assetTuning.spine.animations
+        if ($null -eq $animations) {
+            Fail 'assets.spine.animations 缺失'
+        }
+        else {
+            $expectedAnimations = @('idle', 'move', 'attackBegin', 'attackLoop', 'attackEnd', 'attackEvent', 'die', 'start', 'skill01', 'skill02')
+            $actualAnimations = @($animations.PSObject.Properties.Name)
+            $animationSchemaOk = $true
+
+            foreach ($key in $expectedAnimations) {
+                if ($actualAnimations -notcontains $key) {
+                    Fail ('assets.spine.animations 缺少字段 ' + $key)
+                    $animationSchemaOk = $false
+                }
+            }
+            foreach ($key in $actualAnimations) {
+                if ($expectedAnimations -notcontains $key) {
+                    Fail ('assets.spine.animations 有多余字段 ' + $key + '（拼写错误？）')
+                    $animationSchemaOk = $false
+                }
+            }
+            if ($animationSchemaOk) {
+                Pass 'assets.spine.animations 字段集合正确'
+            }
+
+            foreach ($key in $expectedAnimations) {
+                if ($actualAnimations -contains $key) {
+                    Check-Text ('assets.spine.animations.' + $key) $animations.$key
+                }
+            }
+        }
     }
 }
 

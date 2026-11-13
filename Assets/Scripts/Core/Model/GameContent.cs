@@ -24,6 +24,8 @@ namespace ZeroWalker.Core.Model
 
         public MuzzleTuning muzzle = new MuzzleTuning();
 
+        public AssetsTuning assets = new AssetsTuning();
+
         /// <summary>校验数值合法性，返回全部问题描述（空表示通过）。</summary>
         public List<string> Validate()
         {
@@ -32,6 +34,7 @@ namespace ZeroWalker.Core.Model
             input.Validate(problems);
             bullet.Validate(problems);
             target.Validate(problems);
+            assets.Validate(problems);
             return problems;
         }
     }
