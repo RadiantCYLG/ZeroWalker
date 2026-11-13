@@ -1,0 +1,5 @@
+# 允许在组件上保留数字 SerializeField 的清单（每行：路径|理由，# 开头为注释）
+# 只允许放「不是手感/平衡数值」的项，例如仅编辑器生效的调试开关。
+# 手感、伤害、时长、速度一律进 Assets/Resources/Content/data/*.json。
+
+Assets/Scripts/Game/Player/PlayerInputReader.cs|调试覆盖输入（仅编辑器/开发版生效），不是游戏数值
