@@ -1,0 +1,8 @@
+{
+  "moveLeft": "a",
+  "moveRight": "d",
+  "jump": "space",
+  "dash": "leftShift",
+  "melee": "f",
+  "attack": "leftButton"
+}

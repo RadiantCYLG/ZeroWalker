@@ -1,0 +1,6 @@
+{
+  "muzzleFlash": { "duration": 0.06, "startScale": 0.9, "endScale": 1.35 },
+  "hitFlash": { "duration": 0.15, "startScale": 0.7, "endScale": 1.5 },
+  "hitEffectTint": { "r": 0.35, "g": 0.95, "b": 1, "a": 1 },
+  "hitEffectDestroyDelay": 0.02
+}

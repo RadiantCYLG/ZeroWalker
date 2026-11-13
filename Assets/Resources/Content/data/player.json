@@ -1,0 +1,8 @@
+{
+  "moveSpeed": 5,
+  "jumpForce": 9,
+  "groundCheckRadius": 0.12,
+  "dashDistance": 4,
+  "dashDuration": 0.2,
+  "dashCooldown": 1
+}

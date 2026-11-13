@@ -1,0 +1,8 @@
+{
+  "maxHealth": 3,
+  "hitFlashDuration": 0.08,
+  "hitColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+  "respawn": true,
+  "respawnDelay": 2,
+  "deathScale": 0.6
+}

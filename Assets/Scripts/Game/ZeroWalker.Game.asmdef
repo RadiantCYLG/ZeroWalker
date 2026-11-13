@@ -1,0 +1,19 @@
+{
+    "name": "ZeroWalker.Game",
+    "rootNamespace": "ZeroWalker.Game",
+    "references": [
+        "ZeroWalker.Core",
+        "ZeroWalker.Framework",
+        "spine-unity",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,8 @@
+{
+  "speed": 22,
+  "lifeTime": 2,
+  "damage": 1,
+  "normalColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+  "specialColor": { "r": 0.35, "g": 0.95, "b": 1, "a": 1 },
+  "specialScale": 1.2
+}
