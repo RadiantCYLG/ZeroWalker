@@ -27,7 +27,7 @@ namespace ZeroWalker.Player.States
             _elapsed += Time.deltaTime;
             if (_elapsed < _duration) return;
 
-            var hasMoveInput = Mathf.Abs(Player.Inputs.MoveAxis) > 0.01f;
+            var hasMoveInput = Player.HasMoveInput;
             Machine.ChangeState(hasMoveInput ? Player.MoveState : Player.IdleState);
         }
 

@@ -42,7 +42,7 @@ namespace ZeroWalker.Player.States
                 return;
             }
 
-            if (Mathf.Abs(inputs.MoveAxis) > 0.01f)
+            if (Player.HasMoveInput)
                 Machine.ChangeState(Player.MoveState);
         }
 

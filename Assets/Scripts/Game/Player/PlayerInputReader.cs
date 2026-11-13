@@ -1,7 +1,5 @@
-using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.LowLevel;
 using ZeroWalker.Core.Model;
 using ZeroWalker.Framework.Content;
 
@@ -10,7 +8,7 @@ namespace ZeroWalker.Player
     /// <summary>
     /// 玩家输入的统一读取入口，基于新版 Input System Package（Keyboard/Mouse 轮询）。
     /// 默认按键：A/D 左右移动、空格跳跃、左 Shift 冲刺、F 近战、鼠标左键射击；
-    /// 具体绑定值来自 Content/data/input.json，改表即可换键，无需改代码。
+    /// 具体绑定值来自 Content/data/input.json，改表即可换键，无需改代码（解析在 InputBindings）。
     /// 另提供「调试输入」覆盖，便于无人值守地验证状态机流程（仅编辑器/开发版生效）。
     /// </summary>
     [DisallowMultipleComponent]
@@ -24,14 +22,7 @@ namespace ZeroWalker.Player
         [SerializeField] private bool overrideDashHeld;
         [SerializeField] private bool overrideMeleeHeld;
 
-        private Key _moveLeftKey = Key.A;
-        private Key _moveRightKey = Key.D;
-        private Key _jumpKey = Key.Space;
-        private Key _dashKey = Key.LeftShift;
-        private Key _meleeKey = Key.F;
-        private Key _attackKey = Key.None;
-        private MouseButton? _attackMouseButton = MouseButton.Left;
-
+        private InputBindings _bindings;
         private bool _attackPressed;
         private bool _jumpPressed;
         private bool _jumpHeld;
@@ -83,12 +74,7 @@ namespace ZeroWalker.Player
                 return;
             }
 
-            _moveLeftKey = ParseKey(tuning.moveLeft, Key.A, "input.moveLeft");
-            _moveRightKey = ParseKey(tuning.moveRight, Key.D, "input.moveRight");
-            _jumpKey = ParseKey(tuning.jump, Key.Space, "input.jump");
-            _dashKey = ParseKey(tuning.dash, Key.LeftShift, "input.dash");
-            _meleeKey = ParseKey(tuning.melee, Key.F, "input.melee");
-            ParseAttack(tuning.attack);
+            _bindings = InputBindings.FromTuning(tuning);
         }
 
         /// <summary>由 PlayerController 在每帧开始时调用，保证同一帧内读取到一致的值。</summary>
@@ -117,20 +103,20 @@ namespace ZeroWalker.Player
             }
 
             var keyboard = Keyboard.current;
-            var left = IsPressed(keyboard, _moveLeftKey) ? 1f : 0f;
-            var right = IsPressed(keyboard, _moveRightKey) ? 1f : 0f;
+            var left = InputBindings.IsHeld(keyboard, _bindings.moveLeft) ? 1f : 0f;
+            var right = InputBindings.IsHeld(keyboard, _bindings.moveRight) ? 1f : 0f;
             MoveAxis = right - left;
 
-            AttackHeld = ReadAttackHeld();
+            AttackHeld = _bindings.ReadAttack();
             _attackPressed = AttackHeld && !previousAttackHeld;
 
-            _jumpHeld = IsPressed(keyboard, _jumpKey);
+            _jumpHeld = InputBindings.IsHeld(keyboard, _bindings.jump);
             _jumpPressed = _jumpHeld && !previousJumpHeld;
 
-            _dashHeld = IsPressed(keyboard, _dashKey);
+            _dashHeld = InputBindings.IsHeld(keyboard, _bindings.dash);
             _dashPressed = _dashHeld && !previousDashHeld;
 
-            _meleeHeld = IsPressed(keyboard, _meleeKey);
+            _meleeHeld = InputBindings.IsHeld(keyboard, _bindings.melee);
             _meleePressed = _meleeHeld && !previousMeleeHeld;
         }
 
@@ -149,91 +135,6 @@ namespace ZeroWalker.Player
             overrideJumpHeld = jumpHeld;
             overrideDashHeld = dashHeld;
             overrideMeleeHeld = meleeHeld;
-        }
-
-        private static bool IsPressed(Keyboard keyboard, Key key)
-        {
-            return keyboard != null && key != Key.None && keyboard[key].isPressed;
-        }
-
-        private bool ReadAttackHeld()
-        {
-            if (_attackMouseButton.HasValue)
-            {
-                return IsPressed(Mouse.current, _attackMouseButton.Value);
-            }
-
-            return IsPressed(Keyboard.current, _attackKey);
-        }
-
-        private static bool IsPressed(Mouse mouse, MouseButton button)
-        {
-            if (mouse == null)
-            {
-                return false;
-            }
-
-            switch (button)
-            {
-                case MouseButton.Left:
-                    return mouse.leftButton.isPressed;
-                case MouseButton.Right:
-                    return mouse.rightButton.isPressed;
-                case MouseButton.Middle:
-                    return mouse.middleButton.isPressed;
-                default:
-                    return false;
-            }
-        }
-
-        private void ParseAttack(string binding)
-        {
-            _attackMouseButton = null;
-            _attackKey = Key.None;
-
-            if (string.IsNullOrEmpty(binding))
-            {
-                _attackMouseButton = MouseButton.Left;
-                return;
-            }
-
-            switch (binding.ToLowerInvariant())
-            {
-                case "leftbutton":
-                case "mouseleft":
-                    _attackMouseButton = MouseButton.Left;
-                    return;
-                case "rightbutton":
-                case "mouseright":
-                    _attackMouseButton = MouseButton.Right;
-                    return;
-                case "middlebutton":
-                case "mousemiddle":
-                    _attackMouseButton = MouseButton.Middle;
-                    return;
-            }
-
-            _attackKey = ParseKey(binding, Key.None, "input.attack");
-            if (_attackKey == Key.None)
-            {
-                Debug.LogError("[Input] 无法识别 input.attack=\"" + binding + "\"，退回鼠标左键");
-                _attackMouseButton = MouseButton.Left;
-            }
-        }
-
-        private static Key ParseKey(string binding, Key fallback, string field)
-        {
-            if (!string.IsNullOrEmpty(binding))
-            {
-                Key parsed;
-                if (Enum.TryParse(binding, true, out parsed) && parsed != Key.None)
-                {
-                    return parsed;
-                }
-            }
-
-            Debug.LogError("[Input] 无法识别 " + field + "=\"" + binding + "\"，退回默认键 " + fallback);
-            return fallback;
         }
     }
 }

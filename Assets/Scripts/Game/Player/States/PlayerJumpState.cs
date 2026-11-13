@@ -9,9 +9,6 @@ namespace ZeroWalker.Player.States
     /// </summary>
     public class PlayerJumpState : PlayerState
     {
-        /// <summary>起跳后的最小滞空时间，避免刚离地时被误判为落地。</summary>
-        private const float MinAirTime = 0.05f;
-
         private float _airTime;
 
         public PlayerJumpState(PlayerController player, StateMachine machine) : base(player, machine) { }
@@ -37,11 +34,11 @@ namespace ZeroWalker.Player.States
             // 空中保留水平操控，垂直速度由起跳初速度和重力决定
             Player.MoveHorizontal(Player.Inputs.MoveAxis, 1f);
 
-            if (_airTime < MinAirTime) return;
+            if (_airTime < Player.Tuning.minAirTime) return;
             if (!Player.IsGrounded) return;
             if (Player.Body.velocity.y > 0.01f) return;
 
-            var hasMoveInput = Mathf.Abs(Player.Inputs.MoveAxis) > 0.01f;
+            var hasMoveInput = Player.HasMoveInput;
             Machine.ChangeState(hasMoveInput ? Player.MoveState : Player.IdleState);
         }
     }

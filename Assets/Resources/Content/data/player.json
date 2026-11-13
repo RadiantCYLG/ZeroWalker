@@ -4,5 +4,7 @@
   "groundCheckRadius": 0.12,
   "dashDistance": 4,
   "dashDuration": 0.2,
-  "dashCooldown": 1
+  "dashCooldown": 1,
+  "moveDeadzone": 0.01,
+  "minAirTime": 0.05
 }

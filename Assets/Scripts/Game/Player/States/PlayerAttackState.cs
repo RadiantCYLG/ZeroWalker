@@ -101,7 +101,7 @@ namespace ZeroWalker.Player.States
 
         private void ExitToLocomotion()
         {
-            var hasMoveInput = Mathf.Abs(Player.Inputs.MoveAxis) > 0.01f;
+            var hasMoveInput = Player.HasMoveInput;
             Machine.ChangeState(hasMoveInput ? Player.MoveState : Player.IdleState);
         }
     }

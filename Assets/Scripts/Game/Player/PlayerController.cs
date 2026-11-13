@@ -75,6 +75,9 @@ namespace ZeroWalker.Player
         /// <summary>脚下是否踩在地面/平台上（不包含触发器）。</summary>
         public bool IsGrounded { get; private set; }
 
+        /// <summary>水平输入是否超过死区（死区值来自 player.json 的 moveDeadzone）。</summary>
+        public bool HasMoveInput => Mathf.Abs(Inputs.MoveAxis) > Tuning.moveDeadzone;
+
         /// <summary>冲刺冷却是否已结束。</summary>
         public bool CanDash => _dashCooldown.IsReady;
 
@@ -200,7 +203,7 @@ namespace ZeroWalker.Player
         /// <summary>根据输入方向转身（翻转折纸的视觉根节点，不影响碰撞体）。</summary>
         public void FaceTo(float axis)
         {
-            if (Mathf.Abs(axis) < 0.01f) return;
+            if (Mathf.Abs(axis) < Tuning.moveDeadzone) return;
 
             var direction = axis > 0f ? 1 : -1;
             if (direction == Facing) return;

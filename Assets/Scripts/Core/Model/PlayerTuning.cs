@@ -26,6 +26,12 @@ namespace ZeroWalker.Core.Model
         /// <summary>冲刺冷却时间（秒）。</summary>
         public float dashCooldown = 1f;
 
+        /// <summary>水平输入死区：绝对值不超过它视为「没有移动输入」。</summary>
+        public float moveDeadzone = 0.01f;
+
+        /// <summary>起跳后至少滞空多久才算「离开地面」（秒），避免起跳当帧被误判落地。</summary>
+        public float minAirTime = 0.05f;
+
         /// <summary>冲刺速度（米/秒），由「距离 ÷ 时长」推导，保证总位移等于 dashDistance。</summary>
         public float DashSpeed
         {
@@ -62,6 +68,16 @@ namespace ZeroWalker.Core.Model
             if (dashCooldown < 0f)
             {
                 problems.Add("player.dashCooldown 不能为负数");
+            }
+
+            if (moveDeadzone < 0f || moveDeadzone >= 1f)
+            {
+                problems.Add("player.moveDeadzone 必须在 [0, 1) 之间");
+            }
+
+            if (minAirTime < 0f)
+            {
+                problems.Add("player.minAirTime 不能为负数");
             }
         }
     }
