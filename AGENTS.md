@@ -22,6 +22,7 @@
 | `Documents/AI开发游戏规范.md` | 团队开发规范原文（要求），会随进展更新。冲突时以它为准，差异记进拍板记录 |
 | `Documents/concept.md` | 设计起点：已确认 / 建议待试玩 / 待决定 三栏 |
 | `Documents/拍板记录.md` | 决策定稿处：带日期的三栏记录，本文件只留入口 |
+| `Documents/GamePlay/` | 玩法专题说明：已实现的能力、怎么实现、为什么这么设计 |
 | `Documents/Screenshots/` | 运行截图，文档引用 |
 | `Assets/Scripts/Core/` | 纯 C# 逻辑层：数值 DTO（`Model/`）+ 规则（`Rules/`）。**不引用 UnityEngine** |
 | `Assets/Scripts/Framework/` | 自控底座：内容加载、存档、LitJson。可引用引擎 |
