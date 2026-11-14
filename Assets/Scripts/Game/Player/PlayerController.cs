@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using ZeroWalker.Combat;
 using ZeroWalker.Core.Model;
@@ -71,6 +72,13 @@ namespace ZeroWalker.Player
 
         /// <summary>本次运行累计射出的子弹数（便于调试、UI 或音效统计）。</summary>
         public int ShotCount { get; private set; }
+
+        /// <summary>
+        /// 开火后广播：朝向 + 这一发的颜色。
+        /// 枪口火光、音效、震动等表现订阅它；控制器本身不直接改任何表现状态，
+        /// 这样加音效或换特效都不用动开火逻辑（见 AGENTS.md 硬约定「事件解耦」）。
+        /// </summary>
+        public event Action<int, Color> Fired;
 
         /// <summary>脚下是否踩在地面/平台上（不包含触发器）。</summary>
         public bool IsGrounded { get; private set; }
@@ -240,8 +248,9 @@ namespace ZeroWalker.Player
             bullet.Launch(direction, special);
             ShotCount++;
 
-            // 枪口火光跟随子弹颜色，让特殊射击在画面上更统一
-            muzzle.PlayFlash(Facing, special ? bullet.ShotColor : Color.white);
+            // 枪口火光跟随子弹颜色，让特殊射击在画面上更统一。
+            // 这里只广播事实，具体怎么闪由订阅者决定（MuzzlePoint 负责火光）。
+            Fired?.Invoke(Facing, special ? bullet.ShotColor : Color.white);
         }
     }
 }

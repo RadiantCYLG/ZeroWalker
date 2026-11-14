@@ -397,9 +397,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 2046972907}
-  offset: {x: 0, y: 1.15, z: -10}
-  smoothTime: 0.15
-  lockY: 0
 --- !u!1 &785538911
 GameObject:
   m_ObjectHideFlags: 0
@@ -744,12 +741,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e16854063c68a2e4a8f99f03ea5f755a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 3
   spriteRenderer: {fileID: 974278539}
-  hitColor: {r: 1, g: 1, b: 1, a: 1}
-  hitFlashDuration: 0.08
-  respawn: 1
-  respawnDelay: 2
 --- !u!61 &974278538
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -930,12 +922,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e16854063c68a2e4a8f99f03ea5f755a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 3
   spriteRenderer: {fileID: 1366382855}
-  hitColor: {r: 1, g: 1, b: 1, a: 1}
-  hitFlashDuration: 0.08
-  respawn: 1
-  respawnDelay: 2
 --- !u!61 &1366382854
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -1064,9 +1051,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 0}
-  duration: 0.06
-  startScale: 0.9
-  endScale: 1.35
 --- !u!212 &1396857004
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -1232,7 +1216,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   skeletonAnimation: {fileID: 0}
-  defaultMix: 0.08
 --- !u!114 &1714644783
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1316,12 +1299,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e16854063c68a2e4a8f99f03ea5f755a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 3
   spriteRenderer: {fileID: 1974510283}
-  hitColor: {r: 1, g: 1, b: 1, a: 1}
-  hitFlashDuration: 0.08
-  respawn: 1
-  respawnDelay: 2
 --- !u!61 &1974510282
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -1452,13 +1430,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f125f9a01707a1b4a99a8c21c63d82f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 5
   bulletPrefab: {fileID: 1565469567214048717, guid: 06c6a06872455264fa25acac159997b0, type: 3}
-  jumpForce: 9
-  groundCheckRadius: 0.12
-  dashDistance: 4
-  dashDuration: 0.2
-  dashCooldown: 1
   body: {fileID: 2046972906}
   visualRoot: {fileID: 1714644781}
   animationPlayer: {fileID: 1714644782}
@@ -1477,8 +1449,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   skeletonAnimation: {fileID: 1714644783}
-  boneName: F_Muzzle
-  fallbackLocalOffset: {x: 0.85, y: 1.05, z: 0}
   flash: {fileID: 1396857003}
 --- !u!114 &2046972904
 MonoBehaviour:
@@ -1492,12 +1462,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d2255613ce995745be1a69a28ce2ac4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveLeftKey: 97
-  moveRightKey: 100
-  jumpKey: 32
-  dashKey: 304
-  meleeKey: 102
-  attackMouseButton: 0
   useOverride: 0
   overrideMoveAxis: 0
   overrideAttackHeld: 0
