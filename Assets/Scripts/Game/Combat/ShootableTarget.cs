@@ -71,8 +71,6 @@ namespace ZeroWalker.Combat
             // 关碰撞属于判定逻辑：倒地期间不该再被子弹命中
             foreach (var collider in _colliders) collider.enabled = false;
             Died?.Invoke();
-
-            if (!Tuning.respawn) Destroy(gameObject);
         }
 
         private void Revive()
