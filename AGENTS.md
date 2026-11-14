@@ -90,7 +90,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\verify-conventions
 
 Unity 侧（脚本跑不了的）：
 
-- **什么算过**——Unity 编辑器重新编译后 Console 没有红色 error；进入 Play，A/D 移动、空格跳、左 Shift 冲刺（1 秒冷却）、**起跳后在空中再按左 Shift 也能冲刺且落地正常**、F 近战、按住左键连射，靶子 3 发打掉并在 2 秒后复活。
+- **什么算过**——Unity 编辑器重新编译后 Console 没有红色 error；进入 Play，A/D 移动、空格跳、左 Shift 冲刺（0.7 秒冷却）、**起跳后在空中再按左 Shift 也能冲刺且落地正常**、F 近战、按住左键连射，靶子 3 发打掉并在 2 秒后复活。
 - **怎么反着验一次**——把 `player.json` 的 `moveSpeed` 改成 50，Play 里角色明显变快，说明数值真的从 JSON 走；改回。
 - **怎么反着验事件解耦**——临时注释掉 `MuzzlePoint.cs:66` 那行 `_controller.Fired += HandleFired;`，Play 里开枪不再有火光（子弹照常出），说明火光确实走事件而不是直接调用；还原。
 - **最近一次通过（2026-11-13）**——用户实测：`moveSpeed` 改 50 后角色明显变快，确证 `Resources.Load` 在运行时可用（不是只在编辑器里对）；已改回 5，`verify-content.ps1` 仍 PASS。
