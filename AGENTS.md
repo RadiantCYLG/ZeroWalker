@@ -18,11 +18,10 @@
 | 路径 | 是什么 |
 | --- | --- |
 | `AGENTS.md` / `CLAUDE.md` | 本说明书。CLAUDE.md 只有一行 `@AGENTS.md`，勿改 |
-| `Documents/` | 设计真相：概念、玩法专题、拍板记录、截图。写「是什么、为什么」，不写实现细节 |
+| `Documents/` | 设计真相：概念、拍板记录、截图。写「是什么、为什么」，不写实现细节 |
 | `Documents/AI开发游戏规范.md` | 团队开发规范原文（要求），会随进展更新。冲突时以它为准，差异记进拍板记录 |
 | `Documents/concept.md` | 设计起点：已确认 / 建议待试玩 / 待决定 三栏 |
 | `Documents/拍板记录.md` | 决策定稿处：带日期的三栏记录，本文件只留入口 |
-| `Documents/玩家控制.md` | 玩法专题：操作、状态机、时序、参数表 |
 | `Documents/Screenshots/` | 运行截图，文档引用 |
 | `Assets/Scripts/Core/` | 纯 C# 逻辑层：数值 DTO（`Model/`）+ 规则（`Rules/`）。**不引用 UnityEngine** |
 | `Assets/Scripts/Framework/` | 自控底座：内容加载、存档、LitJson。可引用引擎 |
@@ -59,13 +58,18 @@ Game/*（MonoBehaviour：读数值 → 跑规则 → 驱动动画/刚体/特效�
 1. **逻辑不碰画面**：`Core/` 下出现 `UnityEngine` 即违规（脚本会查）。动画名、颜色、缩放属于表现，留在 `Game/`。
 2. **数值只进 JSON**：新增可调数值，写进 `Content/data/*.json` 并在对应 `*Tuning` 加字段；**不要在 MonoBehaviour 上新增 `[SerializeField] float/int`**。组件上只允许挂资源引用（预制体、Sprite、Transform）与 `bool` 开关。纯数学保护量（除零下限、归一化阈值、物理 epsilon）留在代码里并写注释，不算可调数值。
 3. **文案只进表格**：玩家能看到的字进 `Content/i18n/ui.csv`，中英两列。代码里不写字面量文案。
-4. **新增 .cs 不用手工登记**：asmdef 自动收录当前目录及子目录。但新建目录要确认它归哪个程序集；跨层引用要改 asmdef 的 `references`。将来真需要维护清单（场景表、资源表之类），写 `tools/` 脚本生成，不手改。
+4. **新增 .cs 不用手工登记**：Unity 没有「登记脚本」这一步——asmdef 自动收录当前目录及子目录（规范里说的「没有就引擎自动扫描」）。但新建目录要确认它归哪个程序集；跨层引用要改 asmdef 的 `references`。将来真需要维护清单（场景表、资源表之类），写 `tools/` 脚本生成，不手改。
 5. **一个文件一件事**：类只承担一个职责，混了两件事就拆（例：`PlayerInputReader` 轮询、`InputBindings` 解析绑定）。
 6. **编辑器/调试代码不进发行版**：调试覆盖入口用 `#if UNITY_EDITOR || DEVELOPMENT_BUILD` 包住，发行版里是空操作。
 7. **第三方目录不动**：`Assets/Spine/` 是导入的运行时，改了就再也无法升级。
 8. **场景文件只放「引用与摆放」**：数值不放场景里，否则同一份数据有了两个来源。
 9. **资源 key 只登记一处**：音效、特效、动画名、骨骼名等「用名字找资源」的 key 写在 `Content/data/assets.json`；代码里不裸写资源 key，资源读取只走 `Framework/Content/ContentLoader`（脚本会查）。
 10. **调试面板写回源目录**：面板改的数值写回 `Assets/Resources/Content/data/*.json`，不写 `persistentDataPath` 或打包产物里的副本。存档数据是另一回事，走 `JsonManager`。
+11. **事件解耦**：逻辑与控制器**不直接改表现状态**，只广播事件，由视图订阅后自己处理。
+    - 已有两处范例：`PlayerController.Fired(facing, tint)` → `MuzzlePoint` 播火光；`ShootableTarget.Damaged / Died / Revived` → `TargetView` 闪色、缩放、显隐。
+    - 视图组件放 `Game/*/XxxView.cs`（只读数值 + 订阅事件），逻辑类不出现 `SpriteRenderer`、`SpriteFlash` 这类渲染字段。
+    - 需要「读」的数据可以直接问：动画时长 `SpineAnimationPlayer.GetDuration()`、枪口坐标 `MuzzlePoint.WorldPosition` 属于查询，不算耦合。
+    - 加音效、换特效、接 UI 时，新增订阅者即可，不要回去改开火/扣血逻辑。
 
 ## 验证命令
 
@@ -87,6 +91,7 @@ Unity 侧（脚本跑不了的）：
 
 - **什么算过**——Unity 编辑器重新编译后 Console 没有红色 error；进入 Play，A/D 移动、空格跳、左 Shift 冲刺（1 秒冷却）、F 近战、按住左键连射，靶子 3 发打掉并在 2 秒后复活。
 - **怎么反着验一次**——把 `player.json` 的 `moveSpeed` 改成 50，Play 里角色明显变快，说明数值真的从 JSON 走；改回。
+- **怎么反着验事件解耦**——临时注释掉 `MuzzlePoint.OnEnable` 里的 `_controller.Fired += HandleFired;`，Play 里开枪不再有火光（子弹照常出），说明火光确实走事件而不是直接调用；还原。
 - **最近一次通过（2026-11-13）**——用户实测：`moveSpeed` 改 50 后角色明显变快，确证 `Resources.Load` 在运行时可用（不是只在编辑器里对）；已改回 5，`verify-content.ps1` 仍 PASS。
 
 ## 拍板记录
