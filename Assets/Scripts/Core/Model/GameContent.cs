@@ -20,6 +20,8 @@ namespace ZeroWalker.Core.Model
 
         public ArenaTuning arena = new ArenaTuning();
 
+        public EnemyTuning enemies = new EnemyTuning();
+
         public EffectsTuning effects = new EffectsTuning();
 
         public AnimationTuning animation = new AnimationTuning();
@@ -37,6 +39,7 @@ namespace ZeroWalker.Core.Model
             bullet.Validate(problems);
             target.Validate(problems);
             arena.Validate(problems);
+            enemies.Validate(problems);
             assets.Validate(problems);
             return problems;
         }

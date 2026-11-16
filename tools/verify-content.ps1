@@ -73,6 +73,27 @@ function Check-Flash($label, $flash) {
     Check-Range ($label + ".endScale") $flash.endScale 0.01 20
 }
 
+function Check-FieldSet($label, $object, $fields) {
+    if ($null -eq $object) {
+        Fail ($label + " 缺失")
+        return
+    }
+    $actual = @($object.PSObject.Properties.Name)
+    $bad = @()
+    foreach ($field in $fields) {
+        if ($actual -notcontains $field) { $bad += ("缺少 " + $field) }
+    }
+    foreach ($field in $actual) {
+        if ($fields -notcontains $field) { $bad += ("多出 " + $field) }
+    }
+    if ($bad.Count -eq 0) {
+        Pass ($label + " 字段齐全")
+    }
+    else {
+        Fail ($label + "：" + ($bad -join '，'))
+    }
+}
+
 $root = Split-Path -Parent $PSScriptRoot
 $dataDir = Join-Path $root 'Assets\Resources\Content\data'
 
@@ -80,6 +101,7 @@ $schema = @{
     'player.json'    = @('moveSpeed', 'moveSpeedY', 'dashDistance', 'dashDuration', 'dashCooldown', 'moveDeadzone')
     'input.json'     = @('moveLeft', 'moveRight', 'moveUp', 'moveDown', 'dash', 'melee', 'attack')
     'arena.json'     = @('minY', 'maxY')
+'enemies.json'   = @('melee', 'ranged', 'deathDelay')
     'bullet.json'    = @('speed', 'lifeTime', 'damage', 'normalColor', 'specialColor', 'specialScale')
     'target.json'    = @('maxHealth', 'hitFlashDuration', 'hitColor', 'respawn', 'respawnDelay', 'deathScale')
     'camera.json'    = @('offset', 'smoothTime', 'lockY')
@@ -160,6 +182,48 @@ if ($content.ContainsKey('arena.json')) {
     else {
         Fail 'arena 纵向范围无效：需要 minY < maxY'
     }
+}
+
+if ($content.ContainsKey('enemies.json')) {
+    $e = $content['enemies.json']
+    Check-Range 'enemies.deathDelay' $e.deathDelay 0 5
+
+    $meleeFields = @('maxHealth', 'patrolSpeed', 'chaseSpeed', 'patrolRange', 'detectRadius', 'loseRadius', 'attackRange', 'hitRadius', 'windupTime', 'lungeSpeed', 'lungeTime', 'cooldown')
+    Check-FieldSet 'enemies.melee' $e.melee $meleeFields
+    $m = $e.melee
+    Check-Range 'enemies.melee.maxHealth' $m.maxHealth 1 1000
+    Check-Range 'enemies.melee.patrolSpeed' $m.patrolSpeed 0.1 50
+    Check-Range 'enemies.melee.chaseSpeed' $m.chaseSpeed 0.1 50
+    Check-Range 'enemies.melee.patrolRange' $m.patrolRange 0.1 50
+    Check-Range 'enemies.melee.detectRadius' $m.detectRadius 0.1 50
+    Check-Range 'enemies.melee.loseRadius' $m.loseRadius 0.1 50
+    Check-Range 'enemies.melee.attackRange' $m.attackRange 0.1 50
+    Check-Range 'enemies.melee.hitRadius' $m.hitRadius 0.1 50
+    Check-Range 'enemies.melee.windupTime' $m.windupTime 0 5
+    Check-Range 'enemies.melee.lungeSpeed' $m.lungeSpeed 0.1 50
+    Check-Range 'enemies.melee.lungeTime' $m.lungeTime 0.01 5
+    Check-Range 'enemies.melee.cooldown' $m.cooldown 0 10
+    if ([double]$m.loseRadius -ge [double]$m.detectRadius) {
+        Pass 'enemies.melee 追丢半径不小于发现半径'
+    }
+    else {
+        Fail 'enemies.melee.loseRadius 不能小于 detectRadius'
+    }
+    if ([double]$m.hitRadius -ge [double]$m.attackRange) {
+        Pass 'enemies.melee 命中半径不小于攻击距离'
+    }
+    else {
+        Fail 'enemies.melee.hitRadius 不能小于 attackRange'
+    }
+
+    $rangedFields = @('maxHealth', 'detectRadius', 'aimTime', 'fireCooldown', 'bulletSpeed')
+    Check-FieldSet 'enemies.ranged' $e.ranged $rangedFields
+    $r = $e.ranged
+    Check-Range 'enemies.ranged.maxHealth' $r.maxHealth 1 1000
+    Check-Range 'enemies.ranged.detectRadius' $r.detectRadius 0.1 50
+    Check-Range 'enemies.ranged.aimTime' $r.aimTime 0 5
+    Check-Range 'enemies.ranged.fireCooldown' $r.fireCooldown 0 10
+    Check-Range 'enemies.ranged.bulletSpeed' $r.bulletSpeed 0.1 100
 }
 
 if ($content.ContainsKey('bullet.json')) {

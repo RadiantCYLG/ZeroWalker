@@ -247,7 +247,7 @@ namespace ZeroWalker.Player
 
             var direction = Facing >= 0 ? Vector3.right : Vector3.left;
             var bullet = Instantiate(bulletPrefab, muzzle.WorldPosition, Quaternion.identity);
-            bullet.Launch(direction, special);
+            bullet.Launch(direction, BulletSide.Player, special);
             ShotCount++;
 
             // 枪口火光跟随子弹颜色，让特殊射击在画面上更统一。

@@ -1,0 +1,24 @@
+{
+  "melee": {
+    "maxHealth": 3,
+    "patrolSpeed": 1.2,
+    "chaseSpeed": 3.4,
+    "patrolRange": 3.0,
+    "detectRadius": 5.0,
+    "loseRadius": 8.0,
+    "attackRange": 1.3,
+    "hitRadius": 1.6,
+    "windupTime": 0.25,
+    "lungeSpeed": 7.0,
+    "lungeTime": 0.18,
+    "cooldown": 0.8
+  },
+  "ranged": {
+    "maxHealth": 2,
+    "detectRadius": 8.0,
+    "aimTime": 0.35,
+    "fireCooldown": 1.2,
+    "bulletSpeed": 12.0
+  },
+  "deathDelay": 0.15
+}

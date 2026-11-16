@@ -47,7 +47,7 @@ namespace ZeroWalker.EditorTools
         }
 
         /// <summary>确保 TagManager 里有这个标签，返回是否新建。</summary>
-        private static bool EnsureTag(string tag)
+        internal static bool EnsureTag(string tag)
         {
             var assets = AssetDatabase.LoadAllAssetsAtPath(TagManagerPath);
             if (assets == null || assets.Length == 0)

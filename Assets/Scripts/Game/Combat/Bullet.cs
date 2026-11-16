@@ -7,7 +7,7 @@ namespace ZeroWalker.Combat
 {
     /// <summary>
     /// 直线飞行的子弹。
-    /// 使用 Trigger 触发器 + 连续碰撞检测，命中带 Enemy 标签的物体后立即销毁，其它碰撞体一律穿过。
+    /// 使用 Trigger 触发器 + 连续碰撞检测，命中「这一发该打的标签」后立即销毁（玩家子弹打 Enemy、敌人子弹打 Player），其它一律穿过。
     /// 支持两种外观：普通子弹（保持原画颜色）与特殊子弹（OnAttack 事件射出，换用白色弹体并染成高亮色）。
     /// 速度/存活时间/伤害/颜色等数值来自 Content/data/bullet.json。
     /// </summary>
@@ -29,6 +29,7 @@ namespace ZeroWalker.Combat
         private Vector2 _direction;
         private float _speed;
         private bool _launched;
+        private string _targetTag = GameTags.Enemy;
 
         /// <summary>本发子弹实际使用的着色。</summary>
         public Color ShotColor { get; private set; } = Color.white;
@@ -50,11 +51,15 @@ namespace ZeroWalker.Combat
             _baseScale = transform.localScale;
         }
 
-        /// <summary>发射子弹。special 为 true 时使用特殊颜色/弹体。</summary>
-        public void Launch(Vector2 direction, bool special = false, float speedOverride = -1f)
+        /// <summary>
+        /// 发射子弹。special 为 true 时使用特殊颜色/弹体；
+        /// side 决定这一发能打谁（玩家子弹打 Enemy 标签，敌人子弹打 Player 标签）。
+        /// </summary>
+        public void Launch(Vector2 direction, BulletSide side = BulletSide.Player, bool special = false, float speedOverride = -1f)
         {
             if (direction.sqrMagnitude < 0.0001f) direction = Vector2.right;
 
+            _targetTag = side == BulletSide.Player ? GameTags.Enemy : GameTags.Player;
             _direction = direction.normalized;
             _launched = true;
 
@@ -90,17 +95,15 @@ namespace ZeroWalker.Combat
         {
             if (!_launched) return;
 
-            // 只对带 Enemy 标签的碰撞体生效：玩家、相机边界（CinemachineConfiner 的触发体）、
-            // 将来的地形与触发区都不拦子弹
-            if (other.tag != GameTags.Enemy) return;
+            // 只认这一发该打的标签：玩家子弹打 Enemy，敌人子弹打 Player。
+            // 相机边界（CinemachineConfiner）、地形、同阵营一律穿过。
+            if (other.tag != _targetTag) return;
 
-            var target = other.GetComponentInParent<ShootableTarget>();
-            if (target != null)
-            {
-                // 先取命中点再结算伤害：目标死亡时碰撞体会被禁用，避免取不到正确位置
-                SpawnHitEffect(other);
-                target.TakeDamage(Tuning.damage);
-            }
+            // 命中特效对所有目标都播，扣血则交给目标自己实现 IDamageable
+            SpawnHitEffect(other);
+
+            var damageable = other.GetComponentInParent<IDamageable>();
+            if (damageable != null) damageable.TakeDamage(Tuning.damage);
 
             Destroy(gameObject);
         }

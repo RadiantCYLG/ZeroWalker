@@ -12,7 +12,7 @@ namespace ZeroWalker.Combat
     /// 所以换表现（改颜色、加音效、换成粒子）不用动这里的判定逻辑。
     /// 数值来自 Content/data/target.json，扣血规则在 Core/Rules/Health。
     /// </summary>
-    public class ShootableTarget : MonoBehaviour
+    public class ShootableTarget : MonoBehaviour, IDamageable
     {
         /// <summary>扣血后广播（无论这一下是否致死）。</summary>
         public event Action Damaged;
