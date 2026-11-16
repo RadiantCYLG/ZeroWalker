@@ -26,14 +26,15 @@
 | `Documents/Screenshots/` | 运行截图，文档引用 |
 | `Assets/Scripts/Core/` | 纯 C# 逻辑层：数值 DTO（`Model/`）+ 规则（`Rules/`）+ 敌人 AI（`Ai/`）。**不引用 UnityEngine** |
 | `Assets/Scripts/Core/Ai/` | 敌人状态机：`MeleeEnemyBrain`（巡逻/追击/前摇/扑击/硬直）、`RangedEnemyBrain`（扫描/瞄准/开火/冷却），只吃 `EnemySenses` 吐 `EnemyIntent` |
-| `Assets/Scripts/Framework/` | 自控底座：内容加载、存档、LitJson。可引用引擎 |
+| `Assets/Scripts/Framework/` | 自控底座：内容加载（`ContentLoader` 数值表、`PlayerControlsLoader` 输入动作资产）、存档、LitJson。可引用引擎 |
 | `Assets/Scripts/Game/` | 对象/控制层：MonoBehaviour、状态机、表现。`Player/`、`Combat/`、`Camera/`、`VFX/`、`World/`、`Enemies/`、`UI/` |
 | `Assets/Scripts/Game/Enemies/` | 敌人落地实现：`EnemyAgent` 基类（接刚体/朝向）、`MeleeEnemy`、`RangedEnemy`、`EnemyHealth`（实现 `IDamageable`）、`EnemyView`（订阅事件做闪色/销毁） |
 | `Assets/Scripts/Game/World/` | 场地规则：`ArenaBounds`（横向取所有背景块的并集、纵向按 `arena.json` 比例，夹玩家） |
 | `Assets/Scripts/Game/UI/` | 屏幕 UI：`AimReticleView`（按住瞄准键时把圆环准星贴到鼠标位置） |
 | `Assets/Editor/` | 编辑器工具，不打包：`FlatMoveSetup`（平面走位所需的刚体/碰撞体/区域引用）、`EnemySetup`（用胶囊占位生成两种敌人）、`EnemyTagSetup`（给靶子打 `Enemy` 标签）、`AimReticleSetup`（生成 UGUI 准星与画布） |
 | `Assets/Scripts/*/ZeroWalker.*.asmdef` | 程序集边界。跨层引用必须显式声明 |
-| `Assets/Resources/Content/data/*.json` | **所有可调数值**。改手感只改这里。`assets.json` 是资源 key 登记表；`arena.json` 是可行走的纵向范围（相对单块背景图高的比例；横向就是地图宽度，不在这里）；`enemies.json` 是两种敌人的数值；`ui.json` 是屏幕 UI 尺寸（准星外圈与中心点直径） |
+| `Assets/Resources/Content/data/*.json` | **所有可调数值**。改手感只改这里。`assets.json` 是资源 key 登记表；`arena.json` 是可行走的纵向范围（相对单块背景图高的比例；横向就是地图宽度，不在这里）；`enemies.json` 是两种敌人的数值；`ui.json` 是屏幕 UI 尺寸（准星外圈与中心点直径）；`input.json` 是键位（运行时覆盖 Input Actions 的绑定） |
+| `Assets/Resources/Content/Input/` | 输入动作定义：`PlayerControls.inputactions`（`Move`/`Attack`/`Aim`/`Dash`/`Melee`/`Pointer` 六个动作，Move 是 2D 复合键、Dash 有两条绑定）。具体键位不写在这里，由 `input.json` 覆盖 |
 | `Assets/Resources/Content/i18n/ui.csv` | **所有玩家可见文案**。中英两列 |
 | `Assets/Spine/` | Spine 运行时（第三方，含 `spine-unity` 程序集）。不改 |
 | `Assets/ArtRes/` | 美术源文件（角色、环境、特效），由 Unity 导入，不手工导出 |
@@ -60,12 +61,13 @@ Game/*（MonoBehaviour：读数值 → 跑规则 → 驱动动画/刚体/特效�
 - **Core**：不 `using UnityEngine`，可脱离引擎单测。数据类叫 `*Tuning`，规则类放 `Core/Rules`。
 - **Framework**：引擎相关的公共底座。`JsonManager` 管存档，`ContentLoader` 管数值表。
 - **Game**：只做「把数值接到引擎对象上」。组件里不写死数值，启动时从 `ContentLoader.Current` 取。
+- **输入**：动作的**形状**在 `Resources/Content/Input/PlayerControls.inputactions`（Input Actions），**键位**在 `Content/data/input.json`；启动时 `PlayerControls` 用 `ApplyBindingOverride` 把表里的键盖到动作上。读输入一律走 `PlayerInputReader`，不在业务代码里直接读 `Keyboard.current`。
 
 1. **逻辑不碰画面**：`Core/` 下出现 `UnityEngine` 即违规（脚本会查）。动画名、颜色、缩放属于表现，留在 `Game/`。
 2. **数值只进 JSON**：新增可调数值，写进 `Content/data/*.json` 并在对应 `*Tuning` 加字段；**不要在 MonoBehaviour 上新增 `[SerializeField] float/int`**。组件上只允许挂资源引用（预制体、Sprite、Transform）与 `bool` 开关。纯数学保护量（除零下限、归一化阈值、物理 epsilon）留在代码里并写注释，不算可调数值。
 3. **文案只进表格**：玩家能看到的字进 `Content/i18n/ui.csv`，中英两列。代码里不写字面量文案。
 4. **新增 .cs 不用手工登记**：Unity 没有「登记脚本」这一步——asmdef 自动收录当前目录及子目录（规范里说的「没有就引擎自动扫描」）。但新建目录要确认它归哪个程序集；跨层引用要改 asmdef 的 `references`。将来真需要维护清单（场景表、资源表之类），写 `tools/` 脚本生成，不手改。
-5. **一个文件一件事**：类只承担一个职责，混了两件事就拆（例：`PlayerInputReader` 轮询、`InputBindings` 解析绑定）。
+5. **一个文件一件事**：类只承担一个职责，混了两件事就拆（例：`PlayerInputReader` 采样状态、`PlayerControls` 持有动作并覆盖绑定、`InputPaths` 只负责把键名翻译成绑定路径）。
 6. **编辑器/调试代码不进发行版**：调试覆盖入口用 `#if UNITY_EDITOR || DEVELOPMENT_BUILD` 包住，发行版里是空操作。
 7. **第三方目录不动**：`Assets/Spine/` 是导入的运行时，改了就再也无法升级。
 8. **场景文件只放「引用与摆放」**：数值不放场景里，否则同一份数据有了两个来源。
@@ -100,6 +102,7 @@ Unity 侧（脚本跑不了的）：
 - **怎么反着验一次**——把 `player.json` 的 `moveSpeed` 改成 50，Play 里角色明显变快，说明数值真的从 JSON 走；改回。
 - **怎么反着验活动范围**——把 `arena.json` 的 `maxY` 从 `0.6` 改成 `0.35`，Play 里往上走会提前停住；改回。
 - **怎么反着验事件解耦**——临时注释掉 `MuzzlePoint.cs:66` 那行 `_controller.Fired += HandleFired;`，Play 里开枪不再有火光（子弹照常出），说明火光确实走事件而不是直接调用；还原。
+- **怎么反着验输入表**——把 `input.json` 的 `attack` 从 `"leftButton"` 改成 `"rightButton"`，Play 里左键不再连射、右键才连射（准星也还在），说明键位确实是表在覆盖 Input Actions 的绑定；改回。
 - **最近一次通过（2026-11-13）**——用户实测：`moveSpeed` 改 50 后角色明显变快，确证 `Resources.Load` 在运行时可用（不是只在编辑器里对）；已改回 5，`verify-content.ps1` 仍 PASS。
 - **最近一次反着验事件解耦（2026-11-14）**——用户注释掉 `MuzzlePoint.cs:66` 的 `_controller.Fired += HandleFired;`，Play 里开枪没有火光、子弹照常出；已还原，订阅行与 HEAD 一致。
 
