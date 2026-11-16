@@ -46,7 +46,7 @@ namespace ZeroWalker.EditorTools
                 return;
             }
 
-            var arena = PrepareArena(tiles);
+            var arena = PrepareArena(tiles[0]);
             SetPlayerArena(player, arena);
             PullPlayerInside(player, arena);
 
@@ -109,25 +109,19 @@ namespace ZeroWalker.EditorTools
             return matched.ToArray();
         }
 
-        private static ArenaBounds PrepareArena(SpriteRenderer[] tiles)
+        /// <summary>
+        /// 找到（或新建）场景里的 ArenaBounds。横向范围由它运行时自动收集背景块得出，
+        /// 所以这里不再往组件里写死块列表——加地图只要给新块起个 "BG" 开头的名字。
+        /// </summary>
+        private static ArenaBounds PrepareArena(SpriteRenderer host)
         {
-            var host = tiles[0];
-            var arena = host.GetComponent<ArenaBounds>();
-            if (arena == null)
+            var arena = Object.FindObjectOfType<ArenaBounds>();
+            if (arena != null)
             {
-                arena = host.gameObject.AddComponent<ArenaBounds>();
+                return arena;
             }
 
-            var serialized = new SerializedObject(arena);
-            var property = serialized.FindProperty("tiles");
-            property.arraySize = tiles.Length;
-            for (var i = 0; i < tiles.Length; i++)
-            {
-                property.GetArrayElementAtIndex(i).objectReferenceValue = tiles[i];
-            }
-
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-            return arena;
+            return host.gameObject.AddComponent<ArenaBounds>();
         }
 
         private static void SetPlayerArena(PlayerController player, ArenaBounds arena)

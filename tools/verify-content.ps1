@@ -79,7 +79,7 @@ $dataDir = Join-Path $root 'Assets\Resources\Content\data'
 $schema = @{
     'player.json'    = @('moveSpeed', 'moveSpeedY', 'dashDistance', 'dashDuration', 'dashCooldown', 'moveDeadzone')
     'input.json'     = @('moveLeft', 'moveRight', 'moveUp', 'moveDown', 'dash', 'melee', 'attack')
-    'arena.json'     = @('minX', 'maxX', 'minY', 'maxY')
+    'arena.json'     = @('minY', 'maxY')
     'bullet.json'    = @('speed', 'lifeTime', 'damage', 'normalColor', 'specialColor', 'specialScale')
     'target.json'    = @('maxHealth', 'hitFlashDuration', 'hitColor', 'respawn', 'respawnDelay', 'deathScale')
     'camera.json'    = @('offset', 'smoothTime', 'lockY')
@@ -152,15 +152,13 @@ if ($content.ContainsKey('input.json')) {
 
 if ($content.ContainsKey('arena.json')) {
     $a = $content['arena.json']
-    Check-Range 'arena.minX' $a.minX 0 1
-    Check-Range 'arena.maxX' $a.maxX 0 1
     Check-Range 'arena.minY' $a.minY 0 1
     Check-Range 'arena.maxY' $a.maxY 0 1
-    if (([double]$a.minX -lt [double]$a.maxX) -and ([double]$a.minY -lt [double]$a.maxY)) {
-        Pass 'arena 范围有效（minX < maxX 且 minY < maxY）'
+    if ([double]$a.minY -lt [double]$a.maxY) {
+        Pass 'arena 纵向范围有效（minY < maxY）'
     }
     else {
-        Fail 'arena 范围无效：需要 minX < maxX 且 minY < maxY'
+        Fail 'arena 纵向范围无效：需要 minY < maxY'
     }
 }
 
