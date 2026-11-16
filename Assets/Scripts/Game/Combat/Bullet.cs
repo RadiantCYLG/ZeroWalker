@@ -99,8 +99,15 @@ namespace ZeroWalker.Combat
                 // 先取命中点再结算伤害：目标死亡时碰撞体会被禁用，避免取不到正确位置
                 SpawnHitEffect(other);
                 target.TakeDamage(Tuning.damage);
+                Destroy(gameObject);
+                return;
             }
 
+            // 触发体积不是关卡碰撞：相机边界（CinemachineConfiner 的 PolygonCollider2D）、
+            // 将来的各类触发区都不该把子弹吃掉，否则子弹一出生就会消失
+            if (other.isTrigger) return;
+
+            // 实体碰撞体才算撞墙
             Destroy(gameObject);
         }
 
