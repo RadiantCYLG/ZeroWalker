@@ -108,7 +108,8 @@ Unity 侧（脚本跑不了的）：
 
 - 每完成一个阶段提交一次，message 写清「做了什么 + 为什么」，用中文。
 - 提交前跑完「验证命令」。
-- 当前仓库没有 remote（2026-11-13 用户说明：地址后续再给）。**每次需要 push 时先提醒用户提供地址，不要静默跳过、也不要自己猜一个地址。**
+- 远端：`origin` = `https://github.com/RadiantCYLG/ZeroWalker.git`，`main` 跟踪 `origin/main`。
+- **push 由用户手动执行**（本会话到 GitHub 的 TLS 拿不到凭据，`git ls-remote` 报 `schannel: AcquireCredentialsHandle failed: SEC_E_NO_CREDENTIALS`）。所以每提交完一段要**主动提醒用户 push，并说清待推几笔**（`git rev-list --left-right --count origin/main...main` 的右侧数字）。
 
 ## 已知限制
 
