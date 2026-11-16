@@ -101,7 +101,7 @@ $schema = @{
     'player.json'    = @('moveSpeed', 'moveSpeedY', 'dashDistance', 'dashDuration', 'dashCooldown', 'moveDeadzone')
     'input.json'     = @('moveLeft', 'moveRight', 'moveUp', 'moveDown', 'dash', 'melee', 'attack')
     'arena.json'     = @('minY', 'maxY')
-'enemies.json'   = @('melee', 'ranged', 'deathDelay')
+'enemies.json'   = @('hitColor', 'hitFlashDuration', 'deathDelay', 'melee', 'ranged')
     'bullet.json'    = @('speed', 'lifeTime', 'damage', 'normalColor', 'specialColor', 'specialScale')
     'target.json'    = @('maxHealth', 'hitFlashDuration', 'hitColor', 'respawn', 'respawnDelay', 'deathScale')
     'camera.json'    = @('offset', 'smoothTime', 'lockY')
@@ -187,6 +187,8 @@ if ($content.ContainsKey('arena.json')) {
 if ($content.ContainsKey('enemies.json')) {
     $e = $content['enemies.json']
     Check-Range 'enemies.deathDelay' $e.deathDelay 0 5
+    Check-Range 'enemies.hitFlashDuration' $e.hitFlashDuration 0 5
+    Check-Color 'enemies.hitColor' $e.hitColor
 
     $meleeFields = @('maxHealth', 'patrolSpeed', 'chaseSpeed', 'patrolRange', 'detectRadius', 'loseRadius', 'attackRange', 'hitRadius', 'windupTime', 'lungeSpeed', 'lungeTime', 'cooldown')
     Check-FieldSet 'enemies.melee' $e.melee $meleeFields

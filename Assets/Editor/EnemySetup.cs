@@ -143,10 +143,9 @@ namespace ZeroWalker.EditorTools
             renderer.sprite = sprite;
             renderer.sortingOrder = 1;
 
-            var flash = visual.AddComponent<SpriteFlash>();
-            SetReference(flash, "target", renderer);
-
-            SetReference(view, "flash", flash);
+            // 受击闪色由 EnemyView 直接改这个渲染器的颜色，不要挂 SpriteFlash：
+            // SpriteFlash 是「一次性特效」，Awake 里会把自己隐藏，挂在敌人身上会让敌人一进 Play 就消失。
+            SetReference(view, "body", renderer);
 
             return root;
         }

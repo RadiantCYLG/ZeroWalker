@@ -9,6 +9,12 @@ namespace ZeroWalker.Core.Model
 
         public RangedEnemyTuning ranged = new RangedEnemyTuning();
 
+        /// <summary>受击闪色（直接替换精灵颜色，染色要够亮才看得出）。</summary>
+        public RgbaColor hitColor = new RgbaColor(1f, 0.55f, 0.55f, 1f);
+
+        /// <summary>受击闪色持续时间（秒）。</summary>
+        public float hitFlashDuration = 0.1f;
+
         /// <summary>倒地后多久销毁（秒）。给死亡表现留一点时间。</summary>
         public float deathDelay = 0.15f;
 
@@ -16,6 +22,7 @@ namespace ZeroWalker.Core.Model
         {
             melee.Validate(problems);
             ranged.Validate(problems);
+            if (hitFlashDuration < 0f) problems.Add("enemies.hitFlashDuration 不能为负数");
             if (deathDelay < 0f) problems.Add("enemies.deathDelay 不能为负数");
         }
     }

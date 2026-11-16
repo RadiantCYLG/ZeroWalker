@@ -116,6 +116,8 @@ Game/Enemies/*（落地：写刚体速度、翻朝向、生成子弹、播特效
 
 | 字段 | 默认 | 说明 |
 | --- | --- | --- |
+| `hitColor` | `(1, 0.55, 0.55)` | 受击时精灵被染成的颜色（要够亮才看得出闪） |
+| `hitFlashDuration` | 0.1 | 受击闪色持续秒数 |
 | `melee.maxHealth` | 3 | 挨几发玩家子弹死 |
 | `melee.patrolSpeed` | 1.2 | 巡逻速度 |
 | `melee.chaseSpeed` | 3.4 | 追击速度 |
@@ -141,6 +143,7 @@ Game/Enemies/*（落地：写刚体速度、翻朝向、生成子弹、播特效
 - **伤害结算**：子弹命中后先播命中特效，再 `GetComponentInParent<IDamageable>()?.TakeDamage(damage)`。`ShootableTarget`（靶子）和 `EnemyHealth`（敌人）都实现这个接口，所以子弹不需要知道打的是谁。
 - **标签名**：`GameTags.Enemy` / `GameTags.Player`，不散在代码里。
 - **死亡**：`EnemyHealth` 扣到 0 → 关掉所有子碰撞体（不再挡子弹/被打）→ 广播 `Died`；`EnemyAgent` 收到后停住并关掉自己（不再跑 AI）；`EnemyView` 收到后延迟 `deathDelay` 销毁对象。三者职责分开，互不知道对方做什么。
+- **受击闪色为什么不用 `SpriteFlash`**：那个组件是「一次性特效」，`Awake` 里就调用 `Hide()` 把渲染器关掉（枪口火光、命中火花本来就该从不可见开始）。挂到敌人身上，敌人一进 Play 就整块看不见。敌人的闪色是「闪一下再恢复」，所以 `EnemyView` 自己记一个计时器，直接改 `SpriteRenderer.color`，到点换回原色。
 
 ## 8. 为什么这么设计
 
