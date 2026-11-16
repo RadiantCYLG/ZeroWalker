@@ -8,5 +8,5 @@
   "meleeDamage": 1,
   "meleeRange": 1.4,
   "meleeHitDelay": 0.12,
-  "aimMaxAngle": 55
+  "aimMaxAngle": 20
 }
