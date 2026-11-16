@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using ZeroWalker.Core.Model;
 using ZeroWalker.Framework.Content;
 
@@ -23,6 +24,11 @@ namespace ZeroWalker.Player
         [SerializeField] private bool overrideMeleeHeld;
 
         private InputBindings _bindings;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // 诊断用：只在鼠标键状态切换时打一行，确认「按的是哪个键、被读成了什么」
+        private bool _loggedAttackHeld;
+        private bool _loggedAimHeld;
+#endif
         private bool _attackPressed;
         private bool _dashPressed;
         private bool _dashHeld;
@@ -76,6 +82,24 @@ namespace ZeroWalker.Player
         private void Awake()
         {
             ApplyBindings(ContentLoader.Current.input);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogBindings();
+#endif
+        }
+
+        /// <summary>把解析结果打出来，确认「表里写的键」真的变成了「代码里的键」。</summary>
+        private void LogBindings()
+        {
+            Debug.Log("[Input] 绑定：attack=" + Describe(_bindings.attackMouseButton, _bindings.attackKey)
+                + " aim=" + Describe(_bindings.aimMouseButton, Key.None)
+                + " dash=" + _bindings.dash + "/" + _bindings.dashSecondary
+                + " melee=" + _bindings.melee);
+        }
+
+        private static string Describe(MouseButton? mouseButton, Key key)
+        {
+            if (mouseButton.HasValue) return "鼠标" + mouseButton.Value;
+            return key == Key.None ? "无" : key.ToString();
         }
 
         /// <summary>按内容表重新解析按键绑定；解析失败的项会退回默认键并报错。</summary>
@@ -147,6 +171,18 @@ namespace ZeroWalker.Player
             {
                 AimScreenPosition = mouse.position.ReadValue();
             }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (AttackHeld != _loggedAttackHeld || AimHeld != _loggedAimHeld)
+            {
+                _loggedAttackHeld = AttackHeld;
+                _loggedAimHeld = AimHeld;
+                Debug.Log("[Input] attack=" + AttackHeld + " aim=" + AimHeld
+                    + " left=" + (mouse != null && mouse.leftButton.isPressed)
+                    + " right=" + (mouse != null && mouse.rightButton.isPressed)
+                    + " middle=" + (mouse != null && mouse.middleButton.isPressed));
+            }
+#endif
         }
 
         /// <summary>供自动化验证/演示使用的输入覆盖（发行版中为空操作）。</summary>

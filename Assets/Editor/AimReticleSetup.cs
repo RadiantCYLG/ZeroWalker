@@ -12,6 +12,9 @@ namespace ZeroWalker.EditorTools
     /// <summary>
     /// 生成瞄准准星 UI（UGUI）：一个白色圆环 + 中心圆点，按住瞄准键时跟着鼠标。
     /// 图是脚本画的白图（纯白 + 透明度），换颜色/换造型只换图，不动代码。
+    ///
+    /// 组件挂在**画布**上（常驻激活），准星对象本身只切 Image.enabled；
+    /// 早期版本把组件挂在准星上并 SetActive(false)，对象一关 Update 就不再跑，准星永远出不来。
     /// 幂等：重复执行会复用 Canvas、重建 AimReticle。
     /// </summary>
     public static class AimReticleSetup
@@ -43,8 +46,12 @@ namespace ZeroWalker.EditorTools
             var canvas = EnsureCanvas();
             RemoveOld(ReticleName);
 
-            var reticle = BuildReticle(canvas.transform, ringSprite, dotSprite);
-            reticle.SetActive(false);
+            var reticle = BuildReticle(canvas.transform, ringSprite, dotSprite, out var ringImage, out var dotImage);
+            AttachView(canvas.gameObject, (RectTransform)reticle.transform, ringImage, dotImage, canvas);
+
+            // 准星对象保持激活，只把两张图关掉：显隐由 AimReticleView 每帧切 enabled。
+            ringImage.enabled = false;
+            dotImage.enabled = false;
 
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
             EditorSceneManager.SaveOpenScenes();
@@ -77,7 +84,12 @@ namespace ZeroWalker.EditorTools
             return canvas;
         }
 
-        private static GameObject BuildReticle(Transform parent, Sprite ringSprite, Sprite dotSprite)
+        private static GameObject BuildReticle(
+            Transform parent,
+            Sprite ringSprite,
+            Sprite dotSprite,
+            out Image ringImage,
+            out Image dotImage)
         {
             var reticle = new GameObject(ReticleName, typeof(RectTransform), typeof(Image));
             reticle.transform.SetParent(parent, false);
@@ -87,7 +99,7 @@ namespace ZeroWalker.EditorTools
             rootRect.anchorMax = new Vector2(0.5f, 0.5f);
             rootRect.pivot = new Vector2(0.5f, 0.5f);
 
-            var ringImage = reticle.GetComponent<Image>();
+            ringImage = reticle.GetComponent<Image>();
             ringImage.sprite = ringSprite;
             ringImage.color = Color.white;
             ringImage.raycastTarget = false;
@@ -101,25 +113,51 @@ namespace ZeroWalker.EditorTools
             dotRect.pivot = new Vector2(0.5f, 0.5f);
             dotRect.anchoredPosition = Vector2.zero;
 
-            var dotImage = dot.GetComponent<Image>();
+            dotImage = dot.GetComponent<Image>();
             dotImage.sprite = dotSprite;
             dotImage.color = Color.white;
             dotImage.raycastTarget = false;
 
-            var view = reticle.AddComponent<AimReticleView>();
-            var input = Object.FindObjectOfType<PlayerInputReader>();
-            if (input == null)
-                Debug.LogWarning("[AimReticleSetup] 场景里没有找到 PlayerInputReader，准星不会跟随鼠标。");
-
-            SetReference(view, "root", rootRect);
-            SetReference(view, "ring", ringImage.rectTransform);
-            SetReference(view, "dot", dotImage.rectTransform);
-            SetReference(view, "canvas", reticle.GetComponentInParent<Canvas>());
-            SetReference(view, "input", input);
-
             ApplyPreviewSize(rootRect, dotRect);
 
             return reticle;
+        }
+
+        /// <summary>
+        /// 把 AimReticleView 挂到画布上（画布常驻激活，才能每帧把准星摆到鼠标处）。
+        /// 之前挂在准星上或重复跑过菜单时，清掉旧组件再挂，避免两个实例抢着改位置。
+        /// </summary>
+        private static void AttachView(
+            GameObject canvasObject,
+            RectTransform rootRect,
+            Image ringImage,
+            Image dotImage,
+            Canvas canvas)
+        {
+            var view = canvasObject.GetComponent<AimReticleView>();
+            if (view == null)
+            {
+                view = canvasObject.AddComponent<AimReticleView>();
+            }
+
+            // 准星对象上残留的旧实例（旧版菜单留下的）要删掉
+            var stale = rootRect.GetComponent<AimReticleView>();
+            if (stale != null)
+            {
+                Object.DestroyImmediate(stale);
+            }
+
+            var input = Object.FindObjectOfType<PlayerInputReader>();
+            if (input == null)
+            {
+                Debug.LogWarning("[AimReticleSetup] 场景里没有找到 PlayerInputReader，准星不会跟随鼠标。");
+            }
+
+            SetReference(view, "root", rootRect);
+            SetReference(view, "ring", ringImage);
+            SetReference(view, "dot", dotImage);
+            SetReference(view, "canvas", canvas);
+            SetReference(view, "input", input);
         }
 
         /// <summary>编辑器里就按 ui.json 摆好尺寸，免得摆放时才看出来大小不对。</summary>

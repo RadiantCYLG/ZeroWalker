@@ -1,104 +1,94 @@
 using UnityEngine;
+using UnityEngine.UI;
 using ZeroWalker.Framework.Content;
 using ZeroWalker.Player;
 
 namespace ZeroWalker.UI
 {
     /// <summary>
-    /// 瞄准准星：按住瞄准键时，把一个白色圆环 + 中心圆点跟着鼠标走。
+    /// 瞄准准星：按住瞄准键（默认鼠标右键）时，把圆环准星摆到鼠标位置。
     ///
-    /// 只做「显示」：位置来自 PlayerInputReader.AimScreenPosition，尺寸来自 ui.json。
-    /// 射击方向不在这里算，由 PlayerController 把同一个屏幕点反投影成世界方向。
+    /// 本组件要挂在一个**常驻激活**的对象上（菜单会挂在 HUD 画布上），它控制子对象 <see cref="root"/> 的显隐。
+    /// 早期版本把组件挂在准星自身、并用 SetActive(false) 收起来——对象一旦被关掉 Update 就不再执行，
+    /// 于是永远等不到「显示」的那一帧，准星再也出不来。
+    /// 现在改成：组件常驻，显隐只切两张 Image 的 enabled，并保证 root 对象本身是激活的。
     /// </summary>
-    public sealed class AimReticleView : MonoBehaviour
+    [DisallowMultipleComponent]
+    public class AimReticleView : MonoBehaviour
     {
         [SerializeField] private RectTransform root;
-        [SerializeField] private RectTransform ring;
-        [SerializeField] private RectTransform dot;
+        [SerializeField] private Image ring;
+        [SerializeField] private Image dot;
         [SerializeField] private Canvas canvas;
         [SerializeField] private PlayerInputReader input;
 
+        private bool _visible;
+        private bool _resolved;
+
         private void Awake()
         {
-            if (canvas == null)
-            {
-                canvas = GetComponentInParent<Canvas>();
-            }
-
-            if (input == null)
-            {
-                input = FindObjectOfType<PlayerInputReader>();
-            }
-
-            if (root == null)
-            {
-                root = transform as RectTransform;
-            }
+            Resolve();
         }
 
         private void OnEnable()
         {
+            Resolve();
             SetVisible(false);
+        }
+
+        private void Resolve()
+        {
+            if (input == null) input = FindObjectOfType<PlayerInputReader>();
+            if (canvas == null) canvas = GetComponentInParent<Canvas>();
+            if (root == null) root = transform as RectTransform;
+            if (ring == null && root != null) ring = root.GetComponent<Image>();
+            if (dot == null && root != null && root.childCount > 0) dot = root.GetChild(0).GetComponent<Image>();
+
+            // 准星对象必须保持激活，否则它自己的 Image 不会被重建；
+            // 显隐交给 ring/dot 的 enabled，避免「关掉自己就再也开不回来」。
+            if (root != null && !root.gameObject.activeSelf) root.gameObject.SetActive(true);
+
+            _resolved = root != null && ring != null;
         }
 
         private void Update()
         {
-            if (input == null || root == null)
-            {
-                return;
-            }
+            if (!_resolved) Resolve();
+            if (!_resolved) return;
 
-            var aiming = input.AimHeld;
-            if (!aiming)
-            {
-                SetVisible(false);
-                return;
-            }
+            var aiming = input != null && input.AimHeld;
+            SetVisible(aiming);
+            if (!aiming) return;
 
-            SetVisible(true);
             ApplySize();
             FollowPointer(input.AimScreenPosition);
         }
 
         private void SetVisible(bool visible)
         {
-            if (root != null && root.gameObject.activeSelf != visible)
-            {
-                root.gameObject.SetActive(visible);
-            }
+            if (_visible == visible) return;
+            _visible = visible;
+
+            if (ring != null) ring.enabled = visible;
+            if (dot != null) dot.enabled = visible;
         }
 
+        /// <summary>按 ui.json 的尺寸设置外圈与中心点（像素，按画布参考分辨率）。</summary>
         private void ApplySize()
         {
             var tuning = ContentLoader.Current.ui;
-            SetSize(ring, tuning.aimRingSize);
-            SetSize(dot, tuning.aimDotSize);
+            if (ring != null) ring.rectTransform.sizeDelta = new Vector2(tuning.aimRingSize, tuning.aimRingSize);
+            if (dot != null) dot.rectTransform.sizeDelta = new Vector2(tuning.aimDotSize, tuning.aimDotSize);
         }
 
-        private static void SetSize(RectTransform target, float size)
-        {
-            if (target == null)
-            {
-                return;
-            }
-
-            var current = target.sizeDelta;
-            if (!Mathf.Approximately(current.x, size) || !Mathf.Approximately(current.y, size))
-            {
-                target.sizeDelta = new Vector2(size, size);
-            }
-        }
-
-        /// <summary>屏幕坐标 → 父 RectTransform 的本地坐标，Overlay 与相机模式都能用。</summary>
+        /// <summary>把准星摆到屏幕点对应的画布坐标。</summary>
         private void FollowPointer(Vector2 screenPosition)
         {
             var parent = root.parent as RectTransform;
-            if (parent == null)
-            {
-                root.position = new Vector3(screenPosition.x, screenPosition.y, 0f);
-                return;
-            }
+            if (parent == null) return;
 
+            // Overlay 画布传 null 相机；用 RectTransformUtility 而不是直接写 root.position，
+            // 这样在任意 CanvasScaler 设置与锚点下都成立。
             var camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
                 ? canvas.worldCamera
                 : null;
