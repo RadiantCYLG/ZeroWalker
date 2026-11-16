@@ -33,7 +33,7 @@
 | `Assets/Spine/` | Spine 运行时（第三方，含 `spine-unity` 程序集）。不改 |
 | `Assets/ArtRes/` | 美术源文件（角色、环境、特效），由 Unity 导入，不手工导出 |
 | `Assets/Prefabs/` | 预制体（子弹、命中特效） |
-| `Assets/Scenes/SampleScene.unity` | 当前唯一场景 |
+| `Assets/Scenes/GameScene.unity` | 当前唯一场景 |
 | `tools/` | 校验脚本（见「验证命令」）。不参与打包 |
 | `Packages/`、`ProjectSettings/` | Unity 工程配置。改包/输入设置只能在这里 |
 
