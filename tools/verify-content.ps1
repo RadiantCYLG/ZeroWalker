@@ -99,8 +99,9 @@ $dataDir = Join-Path $root 'Assets\Resources\Content\data'
 
 $schema = @{
     'player.json'    = @('moveSpeed', 'moveSpeedY', 'dashDistance', 'dashDuration', 'dashCooldown', 'moveDeadzone', 'meleeDamage', 'meleeRange', 'meleeHitDelay')
-    'input.json'     = @('moveLeft', 'moveRight', 'moveUp', 'moveDown', 'dash', 'melee', 'attack')
+    'input.json'     = @('moveLeft', 'moveRight', 'moveUp', 'moveDown', 'dash', 'dashSecondary', 'melee', 'attack', 'aim')
     'arena.json'     = @('minY', 'maxY')
+    'ui.json'        = @('aimRingSize', 'aimDotSize')
 'enemies.json'   = @('hitColor', 'hitFlashDuration', 'deathDelay', 'melee', 'ranged')
     'bullet.json'    = @('speed', 'lifeTime', 'damage', 'normalColor', 'specialColor', 'specialScale')
     'target.json'    = @('maxHealth', 'hitFlashDuration', 'hitColor', 'respawn', 'respawnDelay', 'deathScale')
@@ -171,8 +172,22 @@ if ($content.ContainsKey('input.json')) {
     Check-Text 'input.moveUp' $i.moveUp
     Check-Text 'input.moveDown' $i.moveDown
     Check-Text 'input.dash' $i.dash
+    Check-Text 'input.dashSecondary' $i.dashSecondary
     Check-Text 'input.melee' $i.melee
     Check-Text 'input.attack' $i.attack
+    Check-Text 'input.aim' $i.aim
+}
+
+if ($content.ContainsKey('ui.json')) {
+    $u = $content['ui.json']
+    Check-Range 'ui.aimRingSize' $u.aimRingSize 8 256
+    Check-Range 'ui.aimDotSize' $u.aimDotSize 2 64
+    if ([double]$u.aimDotSize -le [double]$u.aimRingSize) {
+        Pass 'ui 准星尺寸有效（中心点不大于外圈）'
+    }
+    else {
+        Fail 'ui 准星尺寸无效：需要 aimDotSize <= aimRingSize'
+    }
 }
 
 if ($content.ContainsKey('arena.json')) {

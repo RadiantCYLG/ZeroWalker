@@ -4,6 +4,8 @@
   "moveUp": "w",
   "moveDown": "s",
   "dash": "leftShift",
+  "dashSecondary": "space",
   "melee": "f",
-  "attack": "leftButton"
+  "attack": "leftButton",
+  "aim": "rightButton"
 }

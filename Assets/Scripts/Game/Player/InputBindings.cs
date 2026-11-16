@@ -17,9 +17,11 @@ namespace ZeroWalker.Player
         public Key moveUp;
         public Key moveDown;
         public Key dash;
+        public Key dashSecondary;
         public Key melee;
         public Key attackKey;
         public MouseButton? attackMouseButton;
+        public MouseButton? aimMouseButton;
 
         /// <summary>按内容表解析全部绑定；解析失败的项退回默认键并报错。</summary>
         public static InputBindings FromTuning(InputTuning tuning)
@@ -30,8 +32,10 @@ namespace ZeroWalker.Player
             bindings.moveUp = ParseKey(tuning.moveUp, Key.W, "input.moveUp");
             bindings.moveDown = ParseKey(tuning.moveDown, Key.S, "input.moveDown");
             bindings.dash = ParseKey(tuning.dash, Key.LeftShift, "input.dash");
+            bindings.dashSecondary = ParseKey(tuning.dashSecondary, Key.Space, "input.dashSecondary");
             bindings.melee = ParseKey(tuning.melee, Key.F, "input.melee");
             bindings.ParseAttack(tuning.attack);
+            bindings.ParseAim(tuning.aim);
             return bindings;
         }
 
@@ -73,6 +77,12 @@ namespace ZeroWalker.Player
             return IsHeld(Keyboard.current, attackKey);
         }
 
+        /// <summary>瞄准键是否按住。</summary>
+        public bool ReadAim()
+        {
+            return aimMouseButton.HasValue && IsHeld(Mouse.current, aimMouseButton.Value);
+        }
+
         private void ParseAttack(string binding)
         {
             attackMouseButton = null;
@@ -84,20 +94,11 @@ namespace ZeroWalker.Player
                 return;
             }
 
-            switch (binding.ToLowerInvariant())
+            MouseButton button;
+            if (TryParseMouseButton(binding, out button))
             {
-                case "leftbutton":
-                case "mouseleft":
-                    attackMouseButton = MouseButton.Left;
-                    return;
-                case "rightbutton":
-                case "mouseright":
-                    attackMouseButton = MouseButton.Right;
-                    return;
-                case "middlebutton":
-                case "mousemiddle":
-                    attackMouseButton = MouseButton.Middle;
-                    return;
+                attackMouseButton = button;
+                return;
             }
 
             attackKey = ParseKey(binding, Key.None, "input.attack");
@@ -105,6 +106,50 @@ namespace ZeroWalker.Player
             {
                 Debug.LogError("[Input] 无法识别 input.attack=\"" + binding + "\"，退回鼠标左键");
                 attackMouseButton = MouseButton.Left;
+            }
+        }
+
+        private void ParseAim(string binding)
+        {
+            aimMouseButton = null;
+
+            if (string.IsNullOrEmpty(binding))
+            {
+                aimMouseButton = MouseButton.Right;
+                return;
+            }
+
+            MouseButton button;
+            if (TryParseMouseButton(binding, out button))
+            {
+                aimMouseButton = button;
+                return;
+            }
+
+            Debug.LogError("[Input] 无法识别 input.aim=\"" + binding + "\"，瞄准需要鼠标键，退回鼠标右键");
+            aimMouseButton = MouseButton.Right;
+        }
+
+        private static bool TryParseMouseButton(string binding, out MouseButton button)
+        {
+            button = MouseButton.Left;
+
+            switch (binding.ToLowerInvariant())
+            {
+                case "leftbutton":
+                case "mouseleft":
+                    button = MouseButton.Left;
+                    return true;
+                case "rightbutton":
+                case "mouseright":
+                    button = MouseButton.Right;
+                    return true;
+                case "middlebutton":
+                case "mousemiddle":
+                    button = MouseButton.Middle;
+                    return true;
+                default:
+                    return false;
             }
         }
 

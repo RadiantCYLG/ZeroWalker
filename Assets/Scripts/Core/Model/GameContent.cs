@@ -30,6 +30,8 @@ namespace ZeroWalker.Core.Model
 
         public AssetsTuning assets = new AssetsTuning();
 
+        public UiTuning ui = new UiTuning();
+
         /// <summary>校验数值合法性，返回全部问题描述（空表示通过）。</summary>
         public List<string> Validate()
         {
@@ -41,6 +43,7 @@ namespace ZeroWalker.Core.Model
             arena.Validate(problems);
             enemies.Validate(problems);
             assets.Validate(problems);
+            ui.Validate(problems);
             return problems;
         }
     }

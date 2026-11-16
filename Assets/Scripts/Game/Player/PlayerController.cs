@@ -49,6 +49,9 @@ namespace ZeroWalker.Player
 
         private PlayerTuning _tuning;
 
+        /// <summary>瞄准用的主相机（懒取，见 TryGetAimDirection）。</summary>
+        private Camera _camera;
+
         // ---- 对外只读数据 ----
         public PlayerInputReader Inputs => inputReader;
         public SpineAnimationPlayer Animation => animationPlayer;
@@ -279,7 +282,14 @@ namespace ZeroWalker.Player
         {
             if (bulletPrefab == null || muzzle == null) return;
 
+            // 默认朝面对的方向平射；按住瞄准键时改为朝准星指的那个世界点。
             var direction = Facing >= 0 ? Vector3.right : Vector3.left;
+            if (Inputs.AimHeld && TryGetAimDirection(out var aim))
+            {
+                direction = new Vector3(aim.x, aim.y, 0f);
+                FaceTo(aim.x >= 0f ? 1f : -1f);
+            }
+
             var bullet = Instantiate(bulletPrefab, muzzle.WorldPosition, Quaternion.identity);
             bullet.Launch(direction, BulletSide.Player, special);
             ShotCount++;
@@ -287,6 +297,32 @@ namespace ZeroWalker.Player
             // 枪口火光跟随子弹颜色，让特殊射击在画面上更统一。
             // 这里只广播事实，具体怎么闪由订阅者决定（MuzzlePoint 负责火光）。
             Fired?.Invoke(Facing, special ? bullet.ShotColor : Color.white);
+        }
+
+        /// <summary>
+        /// 把「准星所在的屏幕点」换算成枪口射出的方向。
+        ///
+        /// 只在瞄准时用：屏幕点先按「相机到枪口所在平面」的距离反投影成世界点，
+        /// 再取「枪口 → 该点」的单位向量，所以准星指哪打哪，与角色朝向无关。
+        /// 没有相机/枪口或两者重合时返回 false，调用方退回平射。
+        /// </summary>
+        private bool TryGetAimDirection(out Vector2 direction)
+        {
+            direction = Vector2.zero;
+
+            var camera = _camera != null ? _camera : (_camera = Camera.main);
+            if (camera == null || muzzle == null || inputReader == null) return false;
+
+            var from = muzzle.WorldPosition;
+            var depth = Mathf.Abs(camera.transform.position.z - from.z);
+            var screen = new Vector3(Inputs.AimScreenPosition.x, Inputs.AimScreenPosition.y, depth);
+            var world = camera.ScreenToWorldPoint(screen);
+
+            var delta = new Vector2(world.x - from.x, world.y - from.y);
+            if (delta.sqrMagnitude < 0.000001f) return false;
+
+            direction = delta.normalized;
+            return true;
         }
 
         private void OnDrawGizmosSelected()

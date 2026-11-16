@@ -26,6 +26,8 @@ namespace ZeroWalker.Player
         private bool _attackPressed;
         private bool _dashPressed;
         private bool _dashHeld;
+        private bool _dashSecondaryHeld;
+        private bool _dashSecondaryPressed;
         private bool _meleePressed;
         private bool _meleeHeld;
 
@@ -47,11 +49,17 @@ namespace ZeroWalker.Player
         /// <summary>射击键是否在本帧被按下。</summary>
         public bool AttackPressed => _attackPressed;
 
-        /// <summary>冲刺键是否在本帧被按下（边沿触发，长按不会连续冲刺）。</summary>
-        public bool DashPressed => _dashPressed;
+        /// <summary>冲刺键是否在本帧被按下（两个冲刺键任一按下即可，边沿触发，长按不会连续冲刺）。</summary>
+        public bool DashPressed => _dashPressed || _dashSecondaryPressed;
 
         /// <summary>近战键（F）是否在本帧被按下（边沿触发）。</summary>
         public bool MeleePressed => _meleePressed;
+
+        /// <summary>瞄准键是否按住（按住时显示准星、射击朝准星）。</summary>
+        public bool AimHeld { get; private set; }
+
+        /// <summary>准星所在的屏幕坐标（像素），瞄准时每帧更新。</summary>
+        public Vector2 AimScreenPosition { get; private set; }
 
         private bool OverrideEnabled
         {
@@ -86,6 +94,7 @@ namespace ZeroWalker.Player
         {
             var previousAttackHeld = AttackHeld;
             var previousDashHeld = _dashHeld;
+            var previousDashSecondaryHeld = _dashSecondaryHeld;
             var previousMeleeHeld = _meleeHeld;
 
             if (OverrideEnabled)
@@ -98,9 +107,15 @@ namespace ZeroWalker.Player
 
                 _dashHeld = overrideDashHeld;
                 _dashPressed = _dashHeld && !previousDashHeld;
+                _dashSecondaryHeld = false;
+                _dashSecondaryPressed = false;
 
                 _meleeHeld = overrideMeleeHeld;
                 _meleePressed = _meleeHeld && !previousMeleeHeld;
+
+                // 调试覆盖不模拟鼠标瞄准，准星停在屏幕中心
+                AimHeld = false;
+                AimScreenPosition = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
                 return;
             }
 
@@ -119,8 +134,19 @@ namespace ZeroWalker.Player
             _dashHeld = InputBindings.IsHeld(keyboard, _bindings.dash);
             _dashPressed = _dashHeld && !previousDashHeld;
 
+            _dashSecondaryHeld = InputBindings.IsHeld(keyboard, _bindings.dashSecondary);
+            _dashSecondaryPressed = _dashSecondaryHeld && !previousDashSecondaryHeld;
+
             _meleeHeld = InputBindings.IsHeld(keyboard, _bindings.melee);
             _meleePressed = _meleeHeld && !previousMeleeHeld;
+
+            AimHeld = _bindings.ReadAim();
+
+            var mouse = Mouse.current;
+            if (mouse != null)
+            {
+                AimScreenPosition = mouse.position.ReadValue();
+            }
         }
 
         /// <summary>供自动化验证/演示使用的输入覆盖（发行版中为空操作）。</summary>
