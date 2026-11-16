@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using ZeroWalker.Combat;
 using ZeroWalker.Core.Model;
@@ -226,6 +227,39 @@ namespace ZeroWalker.Player
             visualRoot.localScale = scale;
         }
 
+        /// <summary>
+        /// 挥一次近战：在角色正面判定一个盒子，命中标签为 Enemy 的物体各结算一次伤害。
+        ///
+        /// 只在 PlayerMeleeState 的挥击瞬间调用一次，所以一次按键最多打一下；
+        /// 盒子尺寸由 meleeRange 推导（高度取 0.9 倍），不额外开参数——
+        /// 近战是「身前一条」，不是脚下一圈，所以从脚下往上抬 0.35 倍量。
+        ///
+        /// 伤害走 IDamageable，和子弹命中共用同一套结算：靶子和敌人都会被近战打掉。
+        /// </summary>
+        public void MeleeStrike()
+        {
+            var tuning = Tuning;
+            var reach = tuning.meleeRange;
+            var center = body.position + new Vector2(Facing * reach * 0.5f, reach * 0.35f);
+            var size = new Vector2(reach, reach * 0.9f);
+
+            var hits = Physics2D.OverlapBoxAll(center, size, 0f);
+            if (hits == null || hits.Length == 0) return;
+
+            // 同一个目标身上可能挂多个碰撞体，先按「可受伤对象」去重，避免一刀打两下
+            var damaged = new HashSet<IDamageable>();
+            for (var i = 0; i < hits.Length; i++)
+            {
+                var hit = hits[i];
+                if (hit == null || hit.tag != GameTags.Enemy) continue;
+
+                var damageable = hit.GetComponentInParent<IDamageable>();
+                if (damageable == null || !damaged.Add(damageable)) continue;
+
+                damageable.TakeDamage(tuning.meleeDamage);
+            }
+        }
+
         /// <summary>立刻在枪口生成一发普通子弹。</summary>
         public void Fire()
         {
@@ -263,6 +297,14 @@ namespace ZeroWalker.Player
                 Gizmos.color = new Color(1f, 0.92f, 0.3f, 0.6f);
                 Gizmos.DrawWireCube(bounds.center, new Vector3(bounds.size.x, bounds.size.y, 0f));
             }
+
+            // 近战判定盒（运行时按当前朝向画，便于对位调 meleeRange）
+            if (body == null) return;
+
+            var reach = Tuning.meleeRange;
+            var center = body.position + new Vector2(Facing * reach * 0.5f, reach * 0.35f);
+            Gizmos.color = new Color(1f, 0.35f, 0.35f, 0.6f);
+            Gizmos.DrawWireCube(center, new Vector3(reach, reach * 0.9f, 0f));
         }
     }
 }

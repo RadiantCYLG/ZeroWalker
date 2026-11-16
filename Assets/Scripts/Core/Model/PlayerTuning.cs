@@ -27,6 +27,15 @@ namespace ZeroWalker.Core.Model
         /// <summary>移动输入死区：轴向量的长度不超过它视为「没有移动输入」。</summary>
         public float moveDeadzone = 0.01f;
 
+        /// <summary>近战每次命中造成的伤害。</summary>
+        public int meleeDamage = 1;
+
+        /// <summary>近战判定盒的长度（米，朝角色正面伸出）。盒子的高度由它推导，不再单独开参数。</summary>
+        public float meleeRange = 1.4f;
+
+        /// <summary>从按下近战到判定生效的时间（秒）。让「刀落下」和「掉血」对齐，而不是一按就到。</summary>
+        public float meleeHitDelay = 0.12f;
+
         /// <summary>冲刺速度（米/秒），由「距离 ÷ 时长」推导，保证总位移等于 dashDistance。</summary>
         public float DashSpeed
         {
@@ -63,6 +72,21 @@ namespace ZeroWalker.Core.Model
             if (moveDeadzone < 0f || moveDeadzone >= 1f)
             {
                 problems.Add("player.moveDeadzone 必须在 [0, 1) 之间");
+            }
+
+            if (meleeDamage < 1)
+            {
+                problems.Add("player.meleeDamage 至少为 1");
+            }
+
+            if (meleeRange <= 0f)
+            {
+                problems.Add("player.meleeRange 必须大于 0");
+            }
+
+            if (meleeHitDelay < 0f)
+            {
+                problems.Add("player.meleeHitDelay 不能为负数");
             }
         }
     }

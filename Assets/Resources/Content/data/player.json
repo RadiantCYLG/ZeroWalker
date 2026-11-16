@@ -4,5 +4,8 @@
   "dashDistance": 4,
   "dashDuration": 0.2,
   "dashCooldown": 0.7,
-  "moveDeadzone": 0.01
+  "moveDeadzone": 0.01,
+  "meleeDamage": 1,
+  "meleeRange": 1.4,
+  "meleeHitDelay": 0.12
 }
