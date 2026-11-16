@@ -7,7 +7,7 @@ namespace ZeroWalker.Combat
 {
     /// <summary>
     /// 直线飞行的子弹。
-    /// 使用 Trigger 触发器 + 连续碰撞检测，命中目标或场景后立即销毁。
+    /// 使用 Trigger 触发器 + 连续碰撞检测，命中带 Enemy 标签的物体后立即销毁，其它碰撞体一律穿过。
     /// 支持两种外观：普通子弹（保持原画颜色）与特殊子弹（OnAttack 事件射出，换用白色弹体并染成高亮色）。
     /// 速度/存活时间/伤害/颜色等数值来自 Content/data/bullet.json。
     /// </summary>
@@ -90,8 +90,9 @@ namespace ZeroWalker.Combat
         {
             if (!_launched) return;
 
-            // 忽略玩家自身（子弹出生点在角色身上）
-            if (other.GetComponentInParent<Player.PlayerController>() != null) return;
+            // 只对带 Enemy 标签的碰撞体生效：玩家、相机边界（CinemachineConfiner 的触发体）、
+            // 将来的地形与触发区都不拦子弹
+            if (other.tag != GameTags.Enemy) return;
 
             var target = other.GetComponentInParent<ShootableTarget>();
             if (target != null)
@@ -99,15 +100,8 @@ namespace ZeroWalker.Combat
                 // 先取命中点再结算伤害：目标死亡时碰撞体会被禁用，避免取不到正确位置
                 SpawnHitEffect(other);
                 target.TakeDamage(Tuning.damage);
-                Destroy(gameObject);
-                return;
             }
 
-            // 触发体积不是关卡碰撞：相机边界（CinemachineConfiner 的 PolygonCollider2D）、
-            // 将来的各类触发区都不该把子弹吃掉，否则子弹一出生就会消失
-            if (other.isTrigger) return;
-
-            // 实体碰撞体才算撞墙
             Destroy(gameObject);
         }
 
