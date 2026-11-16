@@ -25,7 +25,7 @@ namespace ZeroWalker.Player.States
                 _subscribed = true;
             }
 
-            Player.StopHorizontalMovement();
+            Player.StopMovement();
 
             Player.Animation.Play(PlayerAnimations.AttackBegin, false);
             Player.Animation.Queue(PlayerAnimations.AttackLoop, true);
@@ -75,7 +75,7 @@ namespace ZeroWalker.Player.States
         public override void FixedTick()
         {
             // 射击时静止：每帧把水平速度清零，避免惯性滑动
-            Player.StopHorizontalMovement();
+            Player.StopMovement();
         }
 
         /// <summary>

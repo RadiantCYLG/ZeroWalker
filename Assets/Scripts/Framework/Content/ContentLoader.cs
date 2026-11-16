@@ -42,6 +42,7 @@ namespace ZeroWalker.Framework.Content
             content.bullet = Read("bullet", content.bullet);
             content.target = Read("target", content.target);
             content.camera = Read("camera", content.camera);
+            content.arena = Read("arena", content.arena);
             content.effects = Read("effects", content.effects);
             content.animation = Read("animation", content.animation);
             content.muzzle = Read("muzzle", content.muzzle);

@@ -18,6 +18,8 @@ namespace ZeroWalker.Core.Model
 
         public CameraTuning camera = new CameraTuning();
 
+        public ArenaTuning arena = new ArenaTuning();
+
         public EffectsTuning effects = new EffectsTuning();
 
         public AnimationTuning animation = new AnimationTuning();
@@ -34,6 +36,7 @@ namespace ZeroWalker.Core.Model
             input.Validate(problems);
             bullet.Validate(problems);
             target.Validate(problems);
+            arena.Validate(problems);
             assets.Validate(problems);
             return problems;
         }

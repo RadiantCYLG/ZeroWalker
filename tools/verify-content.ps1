@@ -77,8 +77,9 @@ $root = Split-Path -Parent $PSScriptRoot
 $dataDir = Join-Path $root 'Assets\Resources\Content\data'
 
 $schema = @{
-    'player.json'    = @('moveSpeed', 'jumpForce', 'groundCheckRadius', 'dashDistance', 'dashDuration', 'dashCooldown', 'moveDeadzone', 'minAirTime')
-    'input.json'     = @('moveLeft', 'moveRight', 'jump', 'dash', 'melee', 'attack')
+    'player.json'    = @('moveSpeed', 'moveSpeedY', 'dashDistance', 'dashDuration', 'dashCooldown', 'moveDeadzone')
+    'input.json'     = @('moveLeft', 'moveRight', 'moveUp', 'moveDown', 'dash', 'melee', 'attack')
+    'arena.json'     = @('minX', 'maxX', 'minY', 'maxY')
     'bullet.json'    = @('speed', 'lifeTime', 'damage', 'normalColor', 'specialColor', 'specialScale')
     'target.json'    = @('maxHealth', 'hitFlashDuration', 'hitColor', 'respawn', 'respawnDelay', 'deathScale')
     'camera.json'    = @('offset', 'smoothTime', 'lockY')
@@ -131,23 +132,36 @@ Write-Host ''
 if ($content.ContainsKey('player.json')) {
     $p = $content['player.json']
     Check-Range 'player.moveSpeed' $p.moveSpeed 0.1 50
-    Check-Range 'player.jumpForce' $p.jumpForce 0.1 50
-    Check-Range 'player.groundCheckRadius' $p.groundCheckRadius 0.01 2
+    Check-Range 'player.moveSpeedY' $p.moveSpeedY 0.1 50
     Check-Range 'player.dashDistance' $p.dashDistance 0.1 50
     Check-Range 'player.dashDuration' $p.dashDuration 0.01 2
     Check-Range 'player.dashCooldown' $p.dashCooldown 0 10
     Check-Range 'player.moveDeadzone' $p.moveDeadzone 0 0.99
-    Check-Range 'player.minAirTime' $p.minAirTime 0 1
 }
 
 if ($content.ContainsKey('input.json')) {
     $i = $content['input.json']
     Check-Text 'input.moveLeft' $i.moveLeft
     Check-Text 'input.moveRight' $i.moveRight
-    Check-Text 'input.jump' $i.jump
+    Check-Text 'input.moveUp' $i.moveUp
+    Check-Text 'input.moveDown' $i.moveDown
     Check-Text 'input.dash' $i.dash
     Check-Text 'input.melee' $i.melee
     Check-Text 'input.attack' $i.attack
+}
+
+if ($content.ContainsKey('arena.json')) {
+    $a = $content['arena.json']
+    Check-Range 'arena.minX' $a.minX 0 1
+    Check-Range 'arena.maxX' $a.maxX 0 1
+    Check-Range 'arena.minY' $a.minY 0 1
+    Check-Range 'arena.maxY' $a.maxY 0 1
+    if (([double]$a.minX -lt [double]$a.maxX) -and ([double]$a.minY -lt [double]$a.maxY)) {
+        Pass 'arena 范围有效（minX < maxX 且 minY < maxY）'
+    }
+    else {
+        Fail 'arena 范围无效：需要 minX < maxX 且 minY < maxY'
+    }
 }
 
 if ($content.ContainsKey('bullet.json')) {

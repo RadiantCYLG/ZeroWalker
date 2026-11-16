@@ -1,7 +1,8 @@
 {
   "moveLeft": "a",
   "moveRight": "d",
-  "jump": "space",
+  "moveUp": "w",
+  "moveDown": "s",
   "dash": "leftShift",
   "melee": "f",
   "attack": "leftButton"

@@ -5,14 +5,17 @@ using ZeroWalker.Core.Model;
 using ZeroWalker.Core.Rules;
 using ZeroWalker.Framework.Content;
 using ZeroWalker.Player.States;
+using ZeroWalker.World;
 
 namespace ZeroWalker.Player
 {
     /// <summary>
     /// 玩家角色控制器（Blitz）。
-    /// 负责：读取输入 -> 驱动有限状态机 -> 播放 Spine 动画 -> 移动/转向/跳跃 -> 开枪。
+    /// 负责：读取输入 -> 驱动有限状态机 -> 播放 Spine 动画 -> 八向移动/转向 -> 开枪。
     /// 具体状态行为在 States 目录下，每个状态自治地决定何时切换。
-    /// 移动/跳跃/冲刺的可调数值不在这里写死，统一来自 Content/data/player.json。
+    /// 角色在桥面这条带子上移动：A/D 左右，W/S 纵深；没有重力和跳跃，
+    /// 每物理帧结束时把位置夹进活动范围（ArenaBounds）。
+    /// 可调数值不在这里写死，统一来自 Content/data/player.json。
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     public class PlayerController : MonoBehaviour
@@ -28,6 +31,9 @@ namespace ZeroWalker.Player
         [SerializeField] private PlayerInputReader inputReader;
         [SerializeField] private MuzzlePoint muzzle;
 
+        [Header("场地（留空会自动查找场景里的 ArenaBounds）")]
+        [SerializeField] private ArenaBounds arena;
+
         // ---- 状态机 ----
         private readonly StateMachine _machine = new StateMachine();
 
@@ -37,12 +43,9 @@ namespace ZeroWalker.Player
         public PlayerIdleState IdleState { get; private set; }
         public PlayerMoveState MoveState { get; private set; }
         public PlayerAttackState AttackState { get; private set; }
-        public PlayerJumpState JumpState { get; private set; }
         public PlayerDashState DashState { get; private set; }
         public PlayerMeleeState MeleeState { get; private set; }
 
-        private CapsuleCollider2D _capsule;
-        private readonly Collider2D[] _groundHits = new Collider2D[8];
         private PlayerTuning _tuning;
 
         // ---- 对外只读数据 ----
@@ -52,6 +55,7 @@ namespace ZeroWalker.Player
         public Transform VisualRoot => visualRoot;
         public MuzzlePoint Muzzle => muzzle;
         public StateMachine Machine => _machine;
+        public ArenaBounds Arena => arena;
 
         /// <summary>玩家可调数值（来自 Content/data/player.json）。</summary>
         public PlayerTuning Tuning
@@ -80,11 +84,8 @@ namespace ZeroWalker.Player
         /// </summary>
         public event Action<int, Color> Fired;
 
-        /// <summary>脚下是否踩在地面/平台上（不包含触发器）。</summary>
-        public bool IsGrounded { get; private set; }
-
-        /// <summary>水平输入是否超过死区（死区值来自 player.json 的 moveDeadzone）。</summary>
-        public bool HasMoveInput => Mathf.Abs(Inputs.MoveAxis) > Tuning.moveDeadzone;
+        /// <summary>移动输入是否超过死区（含纵深，死区值来自 player.json 的 moveDeadzone）。</summary>
+        public bool HasMoveInput => Inputs.Axis2D.sqrMagnitude > Tuning.moveDeadzone * Tuning.moveDeadzone;
 
         /// <summary>冲刺冷却是否已结束。</summary>
         public bool CanDash => _dashCooldown.IsReady;
@@ -104,7 +105,7 @@ namespace ZeroWalker.Player
             if (inputReader == null) inputReader = GetComponent<PlayerInputReader>();
             if (animationPlayer == null) animationPlayer = GetComponentInChildren<SpineAnimationPlayer>();
             if (muzzle == null) muzzle = GetComponent<MuzzlePoint>();
-            if (_capsule == null) _capsule = GetComponent<CapsuleCollider2D>();
+            if (arena == null) arena = FindObjectOfType<ArenaBounds>();
 
             if (visualRoot == null && animationPlayer != null)
                 visualRoot = animationPlayer.transform;
@@ -114,14 +115,12 @@ namespace ZeroWalker.Player
             IdleState = new PlayerIdleState(this, _machine);
             MoveState = new PlayerMoveState(this, _machine);
             AttackState = new PlayerAttackState(this, _machine);
-            JumpState = new PlayerJumpState(this, _machine);
             DashState = new PlayerDashState(this, _machine);
             MeleeState = new PlayerMeleeState(this, _machine);
         }
 
         private void Start()
         {
-            UpdateGrounded();
             _machine.ChangeState(IdleState, true);
         }
 
@@ -136,34 +135,24 @@ namespace ZeroWalker.Player
 
         private void FixedUpdate()
         {
-            // 每帧先刷新落地状态，状态机内部（跳跃/落地）再使用它
-            UpdateGrounded();
             _machine.FixedTick();
+
+            // 状态机算完速度后统一夹一次：不写进各个状态，保证任何时候都不会走出活动范围
+            ClampToArena();
         }
 
-        /// <summary>沿着水平方向移动。speedScale 用于不同状态下的速度倍率。</summary>
-        public void MoveHorizontal(float axis, float speedScale)
+        /// <summary>沿八向输入移动。speedScale 用于不同状态下的速度倍率。</summary>
+        public void Move(Vector2 axis, float speedScale)
         {
-            var velocity = body.velocity;
-            velocity.x = axis * Tuning.moveSpeed * speedScale;
-            body.velocity = velocity;
+            body.velocity = new Vector2(
+                axis.x * Tuning.moveSpeed * speedScale,
+                axis.y * Tuning.moveSpeedY * speedScale);
         }
 
-        /// <summary>立刻停止水平移动（射击时角色保持原地不动）。</summary>
-        public void StopHorizontalMovement()
+        /// <summary>立刻停下（射击、近战时角色保持原地不动）。</summary>
+        public void StopMovement()
         {
-            var velocity = body.velocity;
-            velocity.x = 0f;
-            body.velocity = velocity;
-        }
-
-        /// <summary>起跳：给刚体一个向上的初速度（重力由 Rigidbody2D 的 Gravity Scale 提供）。</summary>
-        public void Jump()
-        {
-            var velocity = body.velocity;
-            velocity.y = Tuning.jumpForce;
-            body.velocity = velocity;
-            IsGrounded = false;
+            body.velocity = Vector2.zero;
         }
 
         /// <summary>开始冲刺：启动冷却，并按当前朝向施加冲刺速度。</summary>
@@ -173,42 +162,30 @@ namespace ZeroWalker.Player
             ApplyDashVelocity();
         }
 
-        /// <summary>每物理帧保持冲刺水平速度（垂直速度不变）。</summary>
+        /// <summary>每物理帧保持冲刺水平速度（冲刺只走水平方向，纵深速度清零）。</summary>
         public void ApplyDashVelocity()
         {
+            body.velocity = new Vector2(Facing * DashSpeed, 0f);
+        }
+
+        /// <summary>把角色夹在活动范围内；撞到边界时清掉对应方向的速度，避免贴着边界抖动。</summary>
+        private void ClampToArena()
+        {
+            if (arena == null) return;
+
+            var current = body.position;
+            var clamped = arena.Clamp(current);
+            if (clamped == current) return;
+
+            body.position = clamped;
+
             var velocity = body.velocity;
-            velocity.x = Facing * DashSpeed;
+            if (!Mathf.Approximately(clamped.x, current.x)) velocity.x = 0f;
+            if (!Mathf.Approximately(clamped.y, current.y)) velocity.y = 0f;
             body.velocity = velocity;
         }
 
-        /// <summary>用脚底的小圆检测非触发器碰撞体，判断是否踩在地面/平台上。</summary>
-        private void UpdateGrounded()
-        {
-            if (_capsule == null)
-            {
-                IsGrounded = false;
-                return;
-            }
-
-            var bounds = _capsule.bounds;
-            var checkPoint = new Vector2(transform.position.x, bounds.min.y);
-            var count = Physics2D.OverlapCircleNonAlloc(checkPoint, Tuning.groundCheckRadius, _groundHits);
-
-            for (var i = 0; i < count; i++)
-            {
-                var hit = _groundHits[i];
-                if (hit == null || hit == _capsule) continue;
-                if (hit.transform.IsChildOf(transform)) continue;
-                if (hit.isTrigger) continue;
-
-                IsGrounded = true;
-                return;
-            }
-
-            IsGrounded = false;
-        }
-
-        /// <summary>根据输入方向转身（翻转折纸的视觉根节点，不影响碰撞体）。</summary>
+        /// <summary>根据输入水平分量转身（翻转折纸的视觉根节点，不影响碰撞体）。</summary>
         public void FaceTo(float axis)
         {
             if (Mathf.Abs(axis) < Tuning.moveDeadzone) return;
@@ -251,6 +228,16 @@ namespace ZeroWalker.Player
             // 枪口火光跟随子弹颜色，让特殊射击在画面上更统一。
             // 这里只广播事实，具体怎么闪由订阅者决定（MuzzlePoint 负责火光）。
             Fired?.Invoke(Facing, special ? bullet.ShotColor : Color.white);
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            Bounds bounds;
+            if (arena != null && arena.TryGetBounds(out bounds))
+            {
+                Gizmos.color = new Color(1f, 0.92f, 0.3f, 0.6f);
+                Gizmos.DrawWireCube(bounds.center, new Vector3(bounds.size.x, bounds.size.y, 0f));
+            }
         }
     }
 }

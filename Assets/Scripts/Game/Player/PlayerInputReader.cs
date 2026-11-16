@@ -7,7 +7,7 @@ namespace ZeroWalker.Player
 {
     /// <summary>
     /// 玩家输入的统一读取入口，基于新版 Input System Package（Keyboard/Mouse 轮询）。
-    /// 默认按键：A/D 左右移动、空格跳跃、左 Shift 冲刺、F 近战、鼠标左键射击；
+    /// 默认按键：A/D 左右、W/S 前后纵深、左 Shift 冲刺、F 近战、鼠标左键射击；
     /// 具体绑定值来自 Content/data/input.json，改表即可换键，无需改代码（解析在 InputBindings）。
     /// 另提供「调试输入」覆盖，便于无人值守地验证状态机流程（仅编辑器/开发版生效）。
     /// </summary>
@@ -17,31 +17,35 @@ namespace ZeroWalker.Player
         [Header("调试输入（覆盖真实按键，仅编辑器/开发版生效）")]
         [SerializeField] private bool useOverride;
         [SerializeField, Range(-1f, 1f)] private float overrideMoveAxis;
+        [SerializeField, Range(-1f, 1f)] private float overrideDepthAxis;
         [SerializeField] private bool overrideAttackHeld;
-        [SerializeField] private bool overrideJumpHeld;
         [SerializeField] private bool overrideDashHeld;
         [SerializeField] private bool overrideMeleeHeld;
 
         private InputBindings _bindings;
         private bool _attackPressed;
-        private bool _jumpPressed;
-        private bool _jumpHeld;
         private bool _dashPressed;
         private bool _dashHeld;
         private bool _meleePressed;
         private bool _meleeHeld;
 
-        /// <summary>水平移动轴：-1 左、0 静止、1 右。</summary>
+        /// <summary>左右移动轴：-1 左、0 静止、1 右。</summary>
         public float MoveAxis { get; private set; }
+
+        /// <summary>纵深移动轴：-1 向下（远）、0 不动、1 向上（近）。</summary>
+        public float DepthAxis { get; private set; }
+
+        /// <summary>把两个轴合成一个向量，交给 PlayerController.Move 使用。</summary>
+        public Vector2 Axis2D
+        {
+            get { return new Vector2(MoveAxis, DepthAxis); }
+        }
 
         /// <summary>射击键是否处于按住状态。</summary>
         public bool AttackHeld { get; private set; }
 
         /// <summary>射击键是否在本帧被按下。</summary>
         public bool AttackPressed => _attackPressed;
-
-        /// <summary>跳跃键是否在本帧被按下（边沿触发，长按不会连跳）。</summary>
-        public bool JumpPressed => _jumpPressed;
 
         /// <summary>冲刺键是否在本帧被按下（边沿触发，长按不会连续冲刺）。</summary>
         public bool DashPressed => _dashPressed;
@@ -81,18 +85,16 @@ namespace ZeroWalker.Player
         public void Poll()
         {
             var previousAttackHeld = AttackHeld;
-            var previousJumpHeld = _jumpHeld;
             var previousDashHeld = _dashHeld;
             var previousMeleeHeld = _meleeHeld;
 
             if (OverrideEnabled)
             {
                 MoveAxis = Mathf.Clamp(overrideMoveAxis, -1f, 1f);
+                DepthAxis = Mathf.Clamp(overrideDepthAxis, -1f, 1f);
+
                 AttackHeld = overrideAttackHeld;
                 _attackPressed = AttackHeld && !previousAttackHeld;
-
-                _jumpHeld = overrideJumpHeld;
-                _jumpPressed = _jumpHeld && !previousJumpHeld;
 
                 _dashHeld = overrideDashHeld;
                 _dashPressed = _dashHeld && !previousDashHeld;
@@ -107,11 +109,12 @@ namespace ZeroWalker.Player
             var right = InputBindings.IsHeld(keyboard, _bindings.moveRight) ? 1f : 0f;
             MoveAxis = right - left;
 
+            var up = InputBindings.IsHeld(keyboard, _bindings.moveUp) ? 1f : 0f;
+            var down = InputBindings.IsHeld(keyboard, _bindings.moveDown) ? 1f : 0f;
+            DepthAxis = up - down;
+
             AttackHeld = _bindings.ReadAttack();
             _attackPressed = AttackHeld && !previousAttackHeld;
-
-            _jumpHeld = InputBindings.IsHeld(keyboard, _bindings.jump);
-            _jumpPressed = _jumpHeld && !previousJumpHeld;
 
             _dashHeld = InputBindings.IsHeld(keyboard, _bindings.dash);
             _dashPressed = _dashHeld && !previousDashHeld;
@@ -124,15 +127,15 @@ namespace ZeroWalker.Player
         public void SetOverride(
             bool enable,
             float moveAxis = 0f,
+            float depthAxis = 0f,
             bool attackHeld = false,
-            bool jumpHeld = false,
             bool dashHeld = false,
             bool meleeHeld = false)
         {
             useOverride = enable;
             overrideMoveAxis = Mathf.Clamp(moveAxis, -1f, 1f);
+            overrideDepthAxis = Mathf.Clamp(depthAxis, -1f, 1f);
             overrideAttackHeld = attackHeld;
-            overrideJumpHeld = jumpHeld;
             overrideDashHeld = dashHeld;
             overrideMeleeHeld = meleeHeld;
         }

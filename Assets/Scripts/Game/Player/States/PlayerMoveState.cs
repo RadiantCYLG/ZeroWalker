@@ -24,12 +24,6 @@ namespace ZeroWalker.Player.States
                 return;
             }
 
-            if (inputs.JumpPressed && Player.IsGrounded)
-            {
-                Machine.ChangeState(Player.JumpState);
-                return;
-            }
-
             if (inputs.MeleePressed)
             {
                 Machine.ChangeState(Player.MeleeState);
@@ -53,7 +47,7 @@ namespace ZeroWalker.Player.States
 
         public override void FixedTick()
         {
-            Player.MoveHorizontal(Player.Inputs.MoveAxis, 1f);
+            Player.Move(Player.Inputs.Axis2D, 1f);
         }
     }
 }

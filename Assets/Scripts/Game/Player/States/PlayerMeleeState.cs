@@ -5,7 +5,7 @@ namespace ZeroWalker.Player.States
     /// <summary>
     /// 近战攻击状态。
     /// 播放 Spine 的 Skill_02 动画（单次），动画结束后回到 Idle / Move。
-    /// 近战期间角色原地不动、朝向锁定，不响应移动、跳跃、冲刺和射击输入。
+    /// 近战期间角色原地不动、朝向锁定，不响应移动、冲刺和射击输入。
     /// </summary>
     public class PlayerMeleeState : PlayerState
     {
@@ -16,7 +16,7 @@ namespace ZeroWalker.Player.States
 
         public override void Enter()
         {
-            Player.StopHorizontalMovement();
+            Player.StopMovement();
             Player.Animation.Play(PlayerAnimations.Skill02, false);
             _duration = Mathf.Max(Player.Animation.GetDuration(PlayerAnimations.Skill02), 0.1f);
             _elapsed = 0f;
@@ -34,7 +34,7 @@ namespace ZeroWalker.Player.States
         public override void FixedTick()
         {
             // 近战攻击期间保持原地
-            Player.StopHorizontalMovement();
+            Player.StopMovement();
         }
     }
 }

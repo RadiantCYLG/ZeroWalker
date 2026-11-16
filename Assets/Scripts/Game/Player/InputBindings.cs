@@ -14,7 +14,8 @@ namespace ZeroWalker.Player
     {
         public Key moveLeft;
         public Key moveRight;
-        public Key jump;
+        public Key moveUp;
+        public Key moveDown;
         public Key dash;
         public Key melee;
         public Key attackKey;
@@ -26,7 +27,8 @@ namespace ZeroWalker.Player
             var bindings = default(InputBindings);
             bindings.moveLeft = ParseKey(tuning.moveLeft, Key.A, "input.moveLeft");
             bindings.moveRight = ParseKey(tuning.moveRight, Key.D, "input.moveRight");
-            bindings.jump = ParseKey(tuning.jump, Key.Space, "input.jump");
+            bindings.moveUp = ParseKey(tuning.moveUp, Key.W, "input.moveUp");
+            bindings.moveDown = ParseKey(tuning.moveDown, Key.S, "input.moveDown");
             bindings.dash = ParseKey(tuning.dash, Key.LeftShift, "input.dash");
             bindings.melee = ParseKey(tuning.melee, Key.F, "input.melee");
             bindings.ParseAttack(tuning.attack);
