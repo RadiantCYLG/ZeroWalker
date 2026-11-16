@@ -168,21 +168,46 @@ namespace ZeroWalker.Player
             body.velocity = new Vector2(Facing * DashSpeed, 0f);
         }
 
-        /// <summary>把角色夹在活动范围内；撞到边界时清掉对应方向的速度，避免贴着边界抖动。</summary>
+        /// <summary>
+        /// 把角色限制在活动范围内。
+        ///
+        /// 不在事后把位置拉回来——那样每物理帧都会先冲出边界一点、再被瞬移回边界，
+        /// 刚体开着插值，渲染位置就在这两点之间来回摆，贴边时看着就是抖。
+        ///
+        /// 这里改成事先削速度：这一步允许的位移最多是「到边界的剩余距离」，
+        /// 位置因此从不会被写回。真出现在外侧（冲刺、传送、场景初始摆放）才纠正一次。
+        /// </summary>
         private void ClampToArena()
         {
             if (arena == null) return;
 
-            var current = body.position;
-            var clamped = arena.Clamp(current);
-            if (clamped == current) return;
+            Bounds area;
+            if (!arena.TryGetBounds(out area)) return;
 
-            body.position = clamped;
-
+            var position = body.position;
             var velocity = body.velocity;
-            if (!Mathf.Approximately(clamped.x, current.x)) velocity.x = 0f;
-            if (!Mathf.Approximately(clamped.y, current.y)) velocity.y = 0f;
+            var dt = Time.fixedDeltaTime;
+
+            if (dt > 0f)
+            {
+                if (velocity.x > 0f) velocity.x = Mathf.Min(velocity.x, (area.max.x - position.x) / dt);
+                else if (velocity.x < 0f) velocity.x = Mathf.Max(velocity.x, (area.min.x - position.x) / dt);
+
+                if (velocity.y > 0f) velocity.y = Mathf.Min(velocity.y, (area.max.y - position.y) / dt);
+                else if (velocity.y < 0f) velocity.y = Mathf.Max(velocity.y, (area.min.y - position.y) / dt);
+            }
+
             body.velocity = velocity;
+
+            // 保底：万一已经在范围外，只纠正这一次，之后靠上面的削速度保持贴边静止
+            var clamped = new Vector2(
+                Mathf.Clamp(position.x, area.min.x, area.max.x),
+                Mathf.Clamp(position.y, area.min.y, area.max.y));
+
+            if ((clamped - position).sqrMagnitude > 0.000001f)
+            {
+                body.position = clamped;
+            }
         }
 
         /// <summary>根据输入水平分量转身（翻转折纸的视觉根节点，不影响碰撞体）。</summary>
