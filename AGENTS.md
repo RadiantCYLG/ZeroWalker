@@ -27,10 +27,10 @@
 | `Assets/Scripts/Core/` | 纯 C# 逻辑层：数值 DTO（`Model/`）+ 规则（`Rules/`）。**不引用 UnityEngine** |
 | `Assets/Scripts/Framework/` | 自控底座：内容加载、存档、LitJson。可引用引擎 |
 | `Assets/Scripts/Game/` | 对象/控制层：MonoBehaviour、状态机、表现。`Player/`、`Combat/`、`Camera/`、`VFX/`、`World/` |
-| `Assets/Scripts/Game/World/` | 场地规则：`ArenaBounds`（按背景块 + `arena.json` 算出可活动矩形，夹玩家） |
+| `Assets/Scripts/Game/World/` | 场地规则：`ArenaBounds`（横向取所有背景块的并集、纵向按 `arena.json` 比例，夹玩家） |
 | `Assets/Editor/` | 编辑器工具，不打包：`FlatMoveSetup`（一键配好平面走位所需的刚体/碰撞体/区域引用） |
 | `Assets/Scripts/*/ZeroWalker.*.asmdef` | 程序集边界。跨层引用必须显式声明 |
-| `Assets/Resources/Content/data/*.json` | **所有可调数值**。改手感只改这里。`assets.json` 是资源 key 登记表；`arena.json` 是可活动范围（按背景图画布的比例） |
+| `Assets/Resources/Content/data/*.json` | **所有可调数值**。改手感只改这里。`assets.json` 是资源 key 登记表；`arena.json` 是可行走的纵向范围（相对单块背景图高的比例；横向就是地图宽度，不在这里） |
 | `Assets/Resources/Content/i18n/ui.csv` | **所有玩家可见文案**。中英两列 |
 | `Assets/Spine/` | Spine 运行时（第三方，含 `spine-unity` 程序集）。不改 |
 | `Assets/ArtRes/` | 美术源文件（角色、环境、特效），由 Unity 导入，不手工导出 |
@@ -117,7 +117,7 @@ Unity 侧（脚本跑不了的）：
 ## 已知限制
 
 - 没有重力、没有跳跃：W/S 是纵深移动，不是跳。
-- 活动范围是一块轴对齐矩形（`arena.json` 四个比例），画面上看去像「桥面带」；还没有地形、遮挡、高低差。
+- 活动范围：纵向是一刀平的轴对齐带子（`arena.json` 的 `minY / maxY`），横向铺满整张地图，左右没有墙；地图块靠命名约定自动收集（名字以 `BG` 开头）。还没有地形、遮挡、高低差。
 - 冲刺动画用的是 `Move`（Spine 资源里没有对应动作）。
 - 近战只有动画、没有判定（`Skill_02` 播完就回 Idle）。
 - 玩家没有受击/死亡状态。
