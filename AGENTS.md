@@ -27,12 +27,13 @@
 | `Assets/Scripts/Core/` | 纯 C# 逻辑层：数值 DTO（`Model/`）+ 规则（`Rules/`）+ 敌人 AI（`Ai/`）。**不引用 UnityEngine** |
 | `Assets/Scripts/Core/Ai/` | 敌人状态机：`MeleeEnemyBrain`（巡逻/追击/前摇/扑击/硬直）、`RangedEnemyBrain`（扫描/瞄准/开火/冷却），只吃 `EnemySenses` 吐 `EnemyIntent` |
 | `Assets/Scripts/Framework/` | 自控底座：内容加载、存档、LitJson。可引用引擎 |
-| `Assets/Scripts/Game/` | 对象/控制层：MonoBehaviour、状态机、表现。`Player/`、`Combat/`、`Camera/`、`VFX/`、`World/`、`Enemies/` |
+| `Assets/Scripts/Game/` | 对象/控制层：MonoBehaviour、状态机、表现。`Player/`、`Combat/`、`Camera/`、`VFX/`、`World/`、`Enemies/`、`UI/` |
 | `Assets/Scripts/Game/Enemies/` | 敌人落地实现：`EnemyAgent` 基类（接刚体/朝向）、`MeleeEnemy`、`RangedEnemy`、`EnemyHealth`（实现 `IDamageable`）、`EnemyView`（订阅事件做闪色/销毁） |
 | `Assets/Scripts/Game/World/` | 场地规则：`ArenaBounds`（横向取所有背景块的并集、纵向按 `arena.json` 比例，夹玩家） |
-| `Assets/Editor/` | 编辑器工具，不打包：`FlatMoveSetup`（平面走位所需的刚体/碰撞体/区域引用）、`EnemySetup`（用胶囊占位生成两种敌人）、`EnemyTagSetup`（给靶子打 `Enemy` 标签） |
+| `Assets/Scripts/Game/UI/` | 屏幕 UI：`AimReticleView`（按住瞄准键时把圆环准星贴到鼠标位置） |
+| `Assets/Editor/` | 编辑器工具，不打包：`FlatMoveSetup`（平面走位所需的刚体/碰撞体/区域引用）、`EnemySetup`（用胶囊占位生成两种敌人）、`EnemyTagSetup`（给靶子打 `Enemy` 标签）、`AimReticleSetup`（生成 UGUI 准星与画布） |
 | `Assets/Scripts/*/ZeroWalker.*.asmdef` | 程序集边界。跨层引用必须显式声明 |
-| `Assets/Resources/Content/data/*.json` | **所有可调数值**。改手感只改这里。`assets.json` 是资源 key 登记表；`arena.json` 是可行走的纵向范围（相对单块背景图高的比例；横向就是地图宽度，不在这里）；`enemies.json` 是两种敌人的数值 |
+| `Assets/Resources/Content/data/*.json` | **所有可调数值**。改手感只改这里。`assets.json` 是资源 key 登记表；`arena.json` 是可行走的纵向范围（相对单块背景图高的比例；横向就是地图宽度，不在这里）；`enemies.json` 是两种敌人的数值；`ui.json` 是屏幕 UI 尺寸（准星外圈与中心点直径） |
 | `Assets/Resources/Content/i18n/ui.csv` | **所有玩家可见文案**。中英两列 |
 | `Assets/Spine/` | Spine 运行时（第三方，含 `spine-unity` 程序集）。不改 |
 | `Assets/ArtRes/` | 美术源文件（角色、环境、特效），由 Unity 导入，不手工导出 |
@@ -94,7 +95,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\verify-conventions
 
 Unity 侧（脚本跑不了的）：
 
-- **什么算过**——Unity 编辑器重新编译后 Console 没有红色 error；必要时先跑一次菜单 `ZeroWalker/应用平面走位配置（W/S + 活动范围）`；进入 Play，A/D 左右、W/S 纵深八向走位且**走不出活动范围**（不会被柱子/靶子挡住、不会掉出画面）、**贴住上下边界时角色不抖动**、左 Shift 冲刺（0.7 秒冷却，只走水平）、F 近战（挥到敌人身上会掉血）、按住左键连射，靶子 3 发打掉并在 2 秒后复活。
+- **什么算过**——Unity 编辑器重新编译后 Console 没有红色 error；必要时先跑一次菜单 `ZeroWalker/应用平面走位配置（W/S + 活动范围）`；进入 Play，A/D 左右、W/S 纵深八向走位且**走不出活动范围**（不会被柱子/靶子挡住、不会掉出画面）、**贴住上下边界时角色不抖动**、左 Shift 或**空格**冲刺（0.7 秒冷却，只走水平）、F 近战（挥到敌人身上会掉血）、按住左键连射（**不按右键时朝面朝方向平射**）、**按住右键出现白色圆环准星并跟着鼠标，此时子弹朝准星方向飞**，靶子 3 发打掉并在 2 秒后复活。
 - **敌人验收**——跑一次菜单 `ZeroWalker/生成敌人（胶囊占位）`（生成占位胶囊、两个预制体并摆进场景），Play 里：近战敌人在出生点附近来回巡逻，靠近后加速追玩家，贴身时先停一下再扑击；远程敌人站着不动，进视野后停顿一下再开枪，子弹能命中玩家（目前只播命中特效）；两种敌人都能被玩家子弹打死，死后消失。
 - **怎么反着验一次**——把 `player.json` 的 `moveSpeed` 改成 50，Play 里角色明显变快，说明数值真的从 JSON 走；改回。
 - **怎么反着验活动范围**——把 `arena.json` 的 `maxY` 从 `0.6` 改成 `0.35`，Play 里往上走会提前停住；改回。
@@ -126,5 +127,6 @@ Unity 侧（脚本跑不了的）：
 - 玩家没有受击/死亡状态。
 - 敌人 AI 是「直线追」：没有寻路、不会绕障、不会跳平台；两种敌人各只有一套参数，还不能按关卡配置不同强度的同类敌人。
 - 敌人打中玩家只播命中特效（玩家没有血量），近战扑击也没有击退。
+- 瞄准准星依赖鼠标指针（PC 可用）：移动端没有指针，准星会一直停在屏幕中心，等触屏输入一起做。
 - 色彩空间是 Gamma（2D 项目默认），改 Linear 需要重做贴图色彩校验。
 - 移动端未做触屏输入（见拍板记录「待决定」）。
