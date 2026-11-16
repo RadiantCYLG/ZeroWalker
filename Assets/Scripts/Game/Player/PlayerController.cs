@@ -303,7 +303,9 @@ namespace ZeroWalker.Player
         /// 把「准星所在的屏幕点」换算成枪口射出的方向。
         ///
         /// 只在瞄准时用：屏幕点先按「相机到枪口所在平面」的距离反投影成世界点，
-        /// 再取「枪口 → 该点」的单位向量，所以准星指哪打哪，与角色朝向无关。
+        /// 再取「枪口 → 该点」的方向。方向会被收进玩家面向一侧的扇形里：
+        /// 仰角/俯角绝对值不超过 player.json 的 aimMaxAngle，所以准星移到头顶也不会朝天开枪；
+        /// 超出时取边界角度（水平方向朝准星那一侧，抬高或压低到上限）。
         /// 没有相机/枪口或两者重合时返回 false，调用方退回平射。
         /// </summary>
         private bool TryGetAimDirection(out Vector2 direction)
@@ -321,7 +323,22 @@ namespace ZeroWalker.Player
             var delta = new Vector2(world.x - from.x, world.y - from.y);
             if (delta.sqrMagnitude < 0.000001f) return false;
 
-            direction = delta.normalized;
+            // 准星在枪口的哪一侧，就朝哪一侧打（同时也决定开枪后的朝向）。
+            // 准星几乎正在头顶时横向分量趋近 0，这时沿用当前朝向，避免朝向在一帧内反复跳。
+            var side = delta.x >= 0f ? 1f : -1f;
+            if (Mathf.Abs(delta.x) < 0.0001f)
+            {
+                side = Facing >= 0 ? 1f : -1f;
+            }
+
+            // 仰角 = atan2(竖直分量, 横向分量绝对值)，范围 (-90°, 90°)；
+            // 夹到 ±aimMaxAngle 就是「能打到的扇形」，超出的部分贴着边界打。
+            var maxAngle = Mathf.Clamp(Tuning.aimMaxAngle, 1f, 89f);
+            var elevation = Mathf.Atan2(delta.y, Mathf.Abs(delta.x)) * Mathf.Rad2Deg;
+            elevation = Mathf.Clamp(elevation, -maxAngle, maxAngle);
+
+            var radians = elevation * Mathf.Deg2Rad;
+            direction = new Vector2(Mathf.Cos(radians) * side, Mathf.Sin(radians));
             return true;
         }
 

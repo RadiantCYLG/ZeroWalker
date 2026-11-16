@@ -98,7 +98,7 @@ $root = Split-Path -Parent $PSScriptRoot
 $dataDir = Join-Path $root 'Assets\Resources\Content\data'
 
 $schema = @{
-    'player.json'    = @('moveSpeed', 'moveSpeedY', 'dashDistance', 'dashDuration', 'dashCooldown', 'moveDeadzone', 'meleeDamage', 'meleeRange', 'meleeHitDelay')
+    'player.json'    = @('moveSpeed', 'moveSpeedY', 'dashDistance', 'dashDuration', 'dashCooldown', 'moveDeadzone', 'meleeDamage', 'meleeRange', 'meleeHitDelay', 'aimMaxAngle')
     'input.json'     = @('moveLeft', 'moveRight', 'moveUp', 'moveDown', 'dash', 'dashSecondary', 'melee', 'attack', 'aim')
     'arena.json'     = @('minY', 'maxY')
     'ui.json'        = @('aimRingSize', 'aimDotSize')
@@ -163,6 +163,7 @@ if ($content.ContainsKey('player.json')) {
     Check-Range 'player.meleeDamage' $p.meleeDamage 1 100
     Check-Range 'player.meleeRange' $p.meleeRange 0.1 10
     Check-Range 'player.meleeHitDelay' $p.meleeHitDelay 0 2
+    Check-Range 'player.aimMaxAngle' $p.aimMaxAngle 1 89
 }
 
 if ($content.ContainsKey('input.json')) {

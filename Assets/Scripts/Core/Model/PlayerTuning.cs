@@ -36,6 +36,13 @@ namespace ZeroWalker.Core.Model
         /// <summary>从按下近战到判定生效的时间（秒）。让「刀落下」和「掉血」对齐，而不是一按就到。</summary>
         public float meleeHitDelay = 0.12f;
 
+        /// <summary>
+        /// 瞄准的最大仰角/俯角（度，相对水平方向，取绝对值）。
+        /// 准星越过头顶时仰角会趋近 90°，这里把它夹到上限，子弹打不出「垂直朝天」。
+        /// 必须小于 90（等于 90 就会有朝正上方的一发）。
+        /// </summary>
+        public float aimMaxAngle = 55f;
+
         /// <summary>冲刺速度（米/秒），由「距离 ÷ 时长」推导，保证总位移等于 dashDistance。</summary>
         public float DashSpeed
         {
@@ -87,6 +94,11 @@ namespace ZeroWalker.Core.Model
             if (meleeHitDelay < 0f)
             {
                 problems.Add("player.meleeHitDelay 不能为负数");
+            }
+
+            if (aimMaxAngle <= 0f || aimMaxAngle >= 90f)
+            {
+                problems.Add("player.aimMaxAngle 必须在 (0, 90) 之间");
             }
         }
     }
