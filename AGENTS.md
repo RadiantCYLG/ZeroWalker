@@ -5,7 +5,7 @@
 
 ## 一句话游戏
 
-一款 2D 横版冒险闯关游戏：玩家操控折纸风格的枪手 Blitz，左右跑动、跳跃、冲刺，用连射与近战清掉关卡里的目标。
+一款 2D 横版冒险闯关游戏：玩家操控折纸风格的枪手 Blitz，在一幅固定的桥面全景里八向走位（A/D 左右、W/S 纵深）、冲刺，用连射与近战清掉关卡里的目标。
 
 - 引擎/语言：Unity 2022.3.62f3c1 / C#（Spine 骨骼动画、LitJson、Input System Package）
 - 目标平台：Windows PC + Android
@@ -26,9 +26,11 @@
 | `Documents/Screenshots/` | 运行截图，文档引用 |
 | `Assets/Scripts/Core/` | 纯 C# 逻辑层：数值 DTO（`Model/`）+ 规则（`Rules/`）。**不引用 UnityEngine** |
 | `Assets/Scripts/Framework/` | 自控底座：内容加载、存档、LitJson。可引用引擎 |
-| `Assets/Scripts/Game/` | 对象/控制层：MonoBehaviour、状态机、表现。`Player/`、`Combat/`、`Camera/`、`VFX/` |
+| `Assets/Scripts/Game/` | 对象/控制层：MonoBehaviour、状态机、表现。`Player/`、`Combat/`、`Camera/`、`VFX/`、`World/` |
+| `Assets/Scripts/Game/World/` | 场地规则：`ArenaBounds`（按背景块 + `arena.json` 算出可活动矩形，夹玩家） |
+| `Assets/Editor/` | 编辑器工具，不打包：`FlatMoveSetup`（一键配好平面走位所需的刚体/碰撞体/区域引用） |
 | `Assets/Scripts/*/ZeroWalker.*.asmdef` | 程序集边界。跨层引用必须显式声明 |
-| `Assets/Resources/Content/data/*.json` | **所有可调数值**。改手感只改这里。其中 `assets.json` 是资源 key 登记表（动画名、枪口骨骼名、将来的音效/特效 key） |
+| `Assets/Resources/Content/data/*.json` | **所有可调数值**。改手感只改这里。`assets.json` 是资源 key 登记表；`arena.json` 是可活动范围（按背景图画布的比例） |
 | `Assets/Resources/Content/i18n/ui.csv` | **所有玩家可见文案**。中英两列 |
 | `Assets/Spine/` | Spine 运行时（第三方，含 `spine-unity` 程序集）。不改 |
 | `Assets/ArtRes/` | 美术源文件（角色、环境、特效），由 Unity 导入，不手工导出 |
@@ -90,8 +92,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\verify-conventions
 
 Unity 侧（脚本跑不了的）：
 
-- **什么算过**——Unity 编辑器重新编译后 Console 没有红色 error；进入 Play，A/D 移动、空格跳、左 Shift 冲刺（0.7 秒冷却）、**起跳后在空中再按左 Shift 也能冲刺且落地正常**、F 近战、按住左键连射，靶子 3 发打掉并在 2 秒后复活。
+- **什么算过**——Unity 编辑器重新编译后 Console 没有红色 error；必要时先跑一次菜单 `ZeroWalker/应用平面走位配置（W/S + 活动范围）`；进入 Play，A/D 左右、W/S 纵深八向走位且**走不出活动范围**（不会被柱子/靶子挡住、不会掉出画面）、左 Shift 冲刺（0.7 秒冷却，只走水平）、F 近战、按住左键连射，靶子 3 发打掉并在 2 秒后复活。
 - **怎么反着验一次**——把 `player.json` 的 `moveSpeed` 改成 50，Play 里角色明显变快，说明数值真的从 JSON 走；改回。
+- **怎么反着验活动范围**——把 `arena.json` 的 `maxY` 从 `0.6` 改成 `0.35`，Play 里往上走会提前停住；改回。
 - **怎么反着验事件解耦**——临时注释掉 `MuzzlePoint.cs:66` 那行 `_controller.Fired += HandleFired;`，Play 里开枪不再有火光（子弹照常出），说明火光确实走事件而不是直接调用；还原。
 - **最近一次通过（2026-11-13）**——用户实测：`moveSpeed` 改 50 后角色明显变快，确证 `Resources.Load` 在运行时可用（不是只在编辑器里对）；已改回 5，`verify-content.ps1` 仍 PASS。
 - **最近一次反着验事件解耦（2026-11-14）**——用户注释掉 `MuzzlePoint.cs:66` 的 `_controller.Fired += HandleFired;`，Play 里开枪没有火光、子弹照常出；已还原，订阅行与 HEAD 一致。
@@ -113,7 +116,9 @@ Unity 侧（脚本跑不了的）：
 
 ## 已知限制
 
-- 跳跃动画用的是 `Idle`，冲刺用的是 `Move`（Spine 资源里没有对应动作）。
+- 没有重力、没有跳跃：W/S 是纵深移动，不是跳。
+- 活动范围是一块轴对齐矩形（`arena.json` 四个比例），画面上看去像「桥面带」；还没有地形、遮挡、高低差。
+- 冲刺动画用的是 `Move`（Spine 资源里没有对应动作）。
 - 近战只有动画、没有判定（`Skill_02` 播完就回 Idle）。
 - 玩家没有受击/死亡状态。
 - 色彩空间是 Gamma（2D 项目默认），改 Linear 需要重做贴图色彩校验。
