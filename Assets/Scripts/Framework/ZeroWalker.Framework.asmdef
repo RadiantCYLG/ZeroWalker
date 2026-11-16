@@ -2,7 +2,8 @@
     "name": "ZeroWalker.Framework",
     "rootNamespace": "ZeroWalker.Framework",
     "references": [
-        "ZeroWalker.Core"
+        "ZeroWalker.Core",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
